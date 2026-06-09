@@ -275,6 +275,9 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .sf-next-btn{width:100%;font-size:15px;font-weight:600;padding:12px 0;border-radius:var(--r);border:none;background:#3C3489;color:#fff;cursor:pointer}
 .sf-next-btn:active{opacity:0.8}
 .sf-done-btn{width:100%;font-size:15px;font-weight:600;padding:12px 0;border-radius:var(--r);border:none;background:var(--ac);color:#fff;cursor:pointer}
+
+.ex-name-input{flex:1;font-size:13px;border:none;border-bottom:1.5px solid var(--ac);background:none;color:var(--tx);font-family:inherit;padding:2px 0;min-width:0;outline:none}
+.ex-name-input::placeholder{color:var(--tx3)}
 </style>
 </head>
 <body>
@@ -317,15 +320,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
     <div class="lib-grid" id="lib-grid"></div>
     <div class="lib-add-row">
       <input type="text" class="lib-add-input" id="lib-name-input" placeholder="Workout name..." maxlength="40">
-      <select class="lib-type-sel" id="lib-type-sel">
-        <option value="pull">Pull</option>
-        <option value="push">Push</option>
-        <option value="legs">Legs</option>
-        <option value="upper">Upper</option>
-        <option value="circuit">Circuit</option>
-        <option value="cardio">Cardio</option>
-      </select>
-      <button class="lib-save-btn" id="lib-save-btn">+ Add</button>
+      <button class="lib-save-btn" id="lib-save-btn">+ Add blank</button>
     </div>
     <div class="lib-save-status" id="lib-save-status"></div>
   </div>
@@ -345,7 +340,8 @@ var SESS = {
   legs:    {label:'Legs',    dot:'dw', nm:'nw'},
   upper:   {label:'Upper',   dot:'dw', nm:'nw'},
   circuit: {label:'Circuit', dot:'dx', nm:'nx'},
-  cardio:  {label:'Cardio',  dot:'dc', nm:'nc'}
+  cardio:  {label:'Cardio',  dot:'dc', nm:'nc'},
+  af:      {label:'Full Body', dot:'dw', nm:'nw'}
 };
 var AI_HINTS = {
   pull:['Hypertrophy focus','Strength focus','Cable only','Minimal equipment'],
@@ -371,7 +367,22 @@ var libOpen = false, libDrag = null;
 try { weekData = JSON.parse(localStorage.getItem('wt_d') || '{}'); } catch(e) {}
 try { library = JSON.parse(localStorage.getItem('wt_lib') || '[]'); } catch(e) {}
 // Version check - clear stale data
-try { if(localStorage.getItem('wt_v') !== '4') { weekData = {}; localStorage.setItem('wt_v','4'); } } catch(e) {}
+try {
+  if(localStorage.getItem('wt_v') !== '5') {
+    weekData = {};
+    localStorage.setItem('wt_v','5');
+  }
+} catch(e) {}
+// Always ensure AF - Full Body is in the library
+(function(){
+  try {
+    var hasAF = library.some(function(item){ return item.name === 'AF - Full Body'; });
+    if(!hasAF) {
+      library.push({ name:'AF - Full Body', type:'af', groups: AF_PLAN.map(function(p){ return mkGrp(p.type, p.exs); }), notes:'', prs:[] });
+      saveLib();
+    }
+  } catch(e) {}
+})();
 
 function save() { try { localStorage.setItem('wt_d', JSON.stringify(weekData)); } catch(e) {} }
 function saveLib() { try { localStorage.setItem('wt_lib', JSON.stringify(library)); } catch(e) {} }
@@ -425,6 +436,20 @@ var LEGS_PLAN = [
   {type:'normal',exs:[['Wall piriformis','1','Hold/side','','External rotator stretch','']]}
 ];
 
+var AF_PLAN = [
+  {type:'normal', exs:[['Row machine warmup', '1', '750m', '', 'Steady pace, focus on form', '']]},
+  {type:'normal', exs:[['Foam Roll - Quad', '1', '1 min/leg', '', 'Slow, pause on tight spots', '']]},
+  {type:'normal', exs:[['Foam Roll - IT Band', '1', '1 min/leg', '', 'Roll outer thigh hip to knee', '']]},
+  {type:'normal', exs:[['Couch Stretch', '1', '1 min/leg', '', 'Hip flexors, stay tall', '']]},
+  {type:'normal', exs:[['Tempo Back Squat', '3', '8', '40', 'Core braced, hip hinge, no arch - 3s down 1s pause 1s up', '']]},
+  {type:'normal', exs:[['Romanian Dead Lift', '3', '8', '40', 'Hinge at hip, soft knee, bar close to body', '']]},
+  {type:'normal', exs:[['Backwards Lunge', '3', '12', '0', 'Step back, knee tracks over foot, stay upright', '']]},
+  {type:'normal', exs:[['Bench Press', '3', '8', '45', 'Controlled descent, full range of motion', '']]},
+  {type:'normal', exs:[['Shoulder Press', '3', '12', '20', 'Brace core, no arching, press overhead', '']]},
+  {type:'normal', exs:[['Press Ups', '3', '20', '', 'Full range, chest to floor, elbows 45 degrees', '']]}
+];
+
+
 var PLANNED = {
   pull: [['Deadlift'],['Pull-ups'],['Barbell row'],['Face pull'],['Bicep curl']],
   push: [['Bench press'],['Overhead press'],['Incline DB press'],['Lateral raise','Tricep pushdown']],
@@ -436,6 +461,8 @@ function mkSess(type) {
   var groups;
   if(type === 'legs') {
     groups = LEGS_PLAN.map(function(p){ return mkGrp(p.type, p.exs); });
+  } else if(type === 'af') {
+    groups = AF_PLAN.map(function(p){ return mkGrp(p.type, p.exs); });
   } else {
     var pl = PLANNED[type] || [];
     groups = pl.map(function(ns){ return mkGrp(ns.length>1?'superset':'normal', ns.map(function(n){return [n];})); });
@@ -901,9 +928,10 @@ function buildChip(sess,di,wk){
   if(sess.completed) sp.push('&#10003; done');
 
   var hdr=document.createElement('div'); hdr.className='chip-hdr';
+  var chipLabel = sess.libName || def.label;
   hdr.innerHTML='<span class="chip-drag">|||</span>'
     +'<span class="chip-dot '+def.dot+'"></span>'
-    +'<span class="chip-nm '+def.nm+'">'+def.label+'</span>'
+    +'<span class="chip-nm '+def.nm+'">'+chipLabel+'</span>'
     +'<span class="chip-sum">'+sp.join(' - ')+'</span>'
     +'<button class="lib-star" title="Save to library">&#9733;</button>'
     +'<button class="chip-del">x</button>';
@@ -1112,6 +1140,38 @@ function buildChip(sess,di,wk){
     body.querySelectorAll('.ai-chip').forEach(function(c){c.addEventListener('click',function(){if(aip)aip.value=c.dataset.s;});});
 
     // Field inputs
+    // Name input for new/empty exercises
+    body.querySelectorAll('.ex-name-input').forEach(function(inp){
+      setTimeout(function(){ try{inp.focus();}catch(e){} }, 80);
+      function saveName(){
+        var s=findSess(inp.dataset.sid,wk); if(!s) return;
+        var ex=s.groups[parseInt(inp.dataset.gi)].exercises[parseInt(inp.dataset.ei)];
+        if(inp.value.trim()){ex.name=inp.value.trim();ex.planned=false;save();renderAll();}
+      }
+      inp.addEventListener('blur', saveName);
+      inp.addEventListener('keydown',function(e){if(e.key==='Enter'){e.preventDefault();saveName();}});
+    });
+
+    // Double-tap exercise name button to rename
+    body.querySelectorAll('.ex-name-btn').forEach(function(btn){
+      btn.addEventListener('dblclick',function(){
+        var hk=btn.dataset.hk; if(!hk) return;
+        var parts=hk.split('-');
+        var ei=parseInt(parts[parts.length-1]),gi=parseInt(parts[parts.length-2]);
+        var sid=parts.slice(0,parts.length-2).join('-');
+        var s2=findSess(sid,wk); if(!s2) return;
+        var ex=s2.groups[gi].exercises[ei];
+        var inp=document.createElement('input');
+        inp.type='text'; inp.className='ex-name-input';
+        inp.value=ex.name; inp.dataset.sid=sid; inp.dataset.gi=String(gi); inp.dataset.ei=String(ei);
+        btn.parentNode.replaceChild(inp,btn);
+        inp.focus(); inp.select();
+        function save2(){if(inp.value.trim()){ex.name=inp.value.trim();ex.planned=false;save();}renderAll();}
+        inp.addEventListener('blur',save2);
+        inp.addEventListener('keydown',function(e){if(e.key==='Enter'){e.preventDefault();save2();}});
+      });
+    });
+
     body.querySelectorAll('[data-f]').forEach(function(inp){
       inp.addEventListener('input',function(){
         var s=findSess(inp.dataset.sid,wk); if(!s) return;
@@ -1257,20 +1317,20 @@ function renderLib(){
 document.getElementById('lib-toggle').addEventListener('click',function(){libOpen=!libOpen;renderLib();});
 document.getElementById('lib-save-btn').addEventListener('click',function(){
   var name=document.getElementById('lib-name-input').value.trim();
-  var type=document.getElementById('lib-type-sel').value;
   var status=document.getElementById('lib-save-status');
   if(!name){status.textContent='Please enter a name.';return;}
-  var sess=mkSess(type);
-  library.push({name:name,type:type,groups:sess.groups,notes:'',prs:[]});
+  // Create a blank session - user will add exercises after dropping onto a day
+  library.push({name:name,type:'pull',groups:[],notes:'',prs:[]});
   saveLib(); document.getElementById('lib-name-input').value='';
-  status.textContent='"'+name+'" added.';
+  status.textContent='"'+name+'" added to library.';
   setTimeout(function(){status.textContent='';},2500);
   renderLib();
 });
 
 function saveToLib(sess,wk){
   var def=SESS[sess.type]||SESS.cardio;
-  var name=prompt('Save this session to library as:',def.label+' '+new Date().toLocaleDateString('en-GB',{day:'numeric',month:'short'}));
+  var defaultName=sess.libName||(def.label+' '+new Date().toLocaleDateString('en-GB',{day:'numeric',month:'short'}));
+  var name=prompt('Save this session to library as:',defaultName);
   if(!name) return;
   library.push({name:name.trim(),type:sess.type,groups:JSON.parse(JSON.stringify(sess.groups)),notes:sess.notes||'',prs:[]});
   saveLib(); renderLib();
@@ -1278,7 +1338,7 @@ function saveToLib(sess,wk){
 
 function dropFromLib(libIdx,di,wk){
   var item=library[libIdx]; if(!item) return;
-  var newSess={id:uid(),type:item.type,groups:JSON.parse(JSON.stringify(item.groups||[])),cardio:{type:'Run',duration:'',distance:'',calories:''},notes:item.notes||'',prs:[],cals:''};
+  var newSess={id:uid(),type:item.type,libName:item.name,groups:JSON.parse(JSON.stringify(item.groups||[])),cardio:{type:'Run',duration:'',distance:'',calories:''},notes:item.notes||'',prs:[],cals:''};
   getWeek(wk)[di].push(newSess); save(); renderAll();
 }
 
