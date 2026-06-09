@@ -179,8 +179,8 @@ const contentChecks = [
   // Version check (prevents stale localStorage)
   ['localStorage version check', "wt_v'"],
   // JSONbin sync
-  ['Sync: JBIN_KEY defined', 'JBIN_KEY'],
-  ['Sync: JBIN_BIN defined', 'JBIN_BIN'],
+  ['Sync: GIST_TOKEN defined', 'GIST_TOKEN'],
+  ['Sync: api.github.com/gists', 'api.github.com/gists'],
   ['Sync: pushToCloud function', 'pushToCloud'],
   ['Sync: pullFromCloud function', 'pullFromCloud'],
   ['Sync: schedulePush debounce', 'schedulePush'],

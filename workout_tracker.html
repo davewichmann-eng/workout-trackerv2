@@ -1286,117 +1286,121 @@ function dropFromLib(libIdx,di,wk){
 // ── Nav ───────────────────────────────────────────────────────────────────────
 
 // ── JSONbin Sync ─────────────────────────────────────────────────────────────
-var JBIN_KEY = '$2a$10$rDl9CfDedAo1UgwUPRF2DOgIpQ5qHixHU3M28N7.6GzuBZCXTOrFO';
-var JBIN_BIN = '6a280b51f5f4af5e29d1ab78';
-var JBIN_URL = 'https://api.jsonbin.io/v3/b/' + JBIN_BIN;
-var syncStatus = 'idle'; // idle | syncing | ok | error | offline
-var syncPending = false;
+// -- GitHub Gist Sync --------------------------------------------------------
+// Uses GitHub API - proper CORS support for browser apps
+// Token only needs 'gist' scope
+var GIST_TOKEN = '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';
+var GIST_FILENAME = 'workout_tracker_data.json';
+var GIST_DESC = 'Workout Tracker Data';
 var syncTimer = null;
+var syncStatus = 'idle';
+
+function getSyncId() { try { return localStorage.getItem('wt_gist_id') || ''; } catch(e) { return ''; } }
+function setSyncId(id) { try { localStorage.setItem('wt_gist_id', id); } catch(e) {} }
 
 function setSyncStatus(status, msg) {
   syncStatus = status;
   var el = document.getElementById('sync-status');
   if(!el) return;
-  var icons = {idle:'', syncing:'&#8635; syncing...', ok:'&#10003; synced', error:'&#9888; sync failed', offline:'&#9889; offline - saved locally'};
+  var icons = {idle:'', syncing:'&#8635; syncing...', ok:'&#10003; synced', error:'&#9888; sync failed', offline:'&#9889; offline'};
   var colors = {idle:'var(--tx3)', syncing:'var(--tx3)', ok:'var(--ac)', error:'var(--dc)', offline:'#EF9F27'};
   var label = icons[status] || '';
-  if(status === 'error' && msg) label += ' (' + msg.slice(0,40) + ')';
+  if(status === 'error' && msg) label += ' (' + msg.slice(0,50) + ')';
   el.innerHTML = label;
   el.style.color = colors[status] || 'var(--tx3)';
 }
 
 async function pushToCloud() {
-  if(!navigator.onLine){ setSyncStatus('offline'); return; }
+  if(!navigator.onLine) { setSyncStatus('offline'); return; }
   setSyncStatus('syncing');
   try {
-    var payload = {weekData: weekData, library: library};
-    var res = await fetch(JBIN_URL, {
-      method: 'PUT',
+    var payload = JSON.stringify({weekData: weekData, library: library});
+    var gistId = getSyncId();
+    var url, method;
+    if(gistId) {
+      url = 'https://api.github.com/gists/' + gistId;
+      method = 'PATCH';
+    } else {
+      url = 'https://api.github.com/gists';
+      method = 'POST';
+    }
+    var body = {
+      description: GIST_DESC,
+      public: false,
+      files: {}
+    };
+    body.files[GIST_FILENAME] = { content: payload };
+    var res = await fetch(url, {
+      method: method,
       headers: {
         'Content-Type': 'application/json',
-        'X-Master-Key': JBIN_KEY,
-        'X-Access-Key': JBIN_KEY,
-        'X-Bin-Versioning': 'false'
+        'Authorization': 'token ' + GIST_TOKEN,
+        'Accept': 'application/vnd.github.v3+json'
       },
-      body: JSON.stringify(payload)
+      body: JSON.stringify(body)
     });
-    if(!res.ok) {
-      var errText = await res.text();
-      throw new Error('HTTP ' + res.status + ': ' + errText.slice(0,100));
-    }
+    if(!res.ok) { var e = await res.text(); throw new Error('HTTP ' + res.status + ': ' + e.slice(0,80)); }
+    var data = await res.json();
+    if(data.id) setSyncId(data.id);
     setSyncStatus('ok');
   } catch(e) {
-    console.error('Push failed:', e.message);
+    console.error('Sync push failed:', e.message);
     setSyncStatus('error', e.message);
   }
 }
 
 async function pullFromCloud() {
-  if(!navigator.onLine){ setSyncStatus('offline'); return false; }
+  if(!navigator.onLine) { setSyncStatus('offline'); return false; }
+  var gistId = getSyncId();
+  if(!gistId) { return false; }
   setSyncStatus('syncing');
   try {
-    var res = await fetch(JBIN_URL + '/latest', {
+    var res = await fetch('https://api.github.com/gists/' + gistId, {
       headers: {
-        'X-Master-Key': JBIN_KEY,
-        'X-Access-Key': JBIN_KEY
+        'Authorization': 'token ' + GIST_TOKEN,
+        'Accept': 'application/vnd.github.v3+json'
       }
     });
-    if(!res.ok) {
-      var errText = await res.text();
-      throw new Error('HTTP ' + res.status + ': ' + errText.slice(0,100));
-    }
-    var json = await res.json();
-    var data = json.record;
-    if(data && data.weekData && Object.keys(data.weekData).length > 0) {
-      weekData = data.weekData;
+    if(!res.ok) throw new Error('HTTP ' + res.status);
+    var data = await res.json();
+    var file = data.files && data.files[GIST_FILENAME];
+    if(!file || !file.content) throw new Error('No data in gist');
+    var parsed = JSON.parse(file.content);
+    if(parsed.weekData && Object.keys(parsed.weekData).length > 0) {
+      weekData = parsed.weekData;
       save();
     }
-    if(data && data.library && data.library.length > 0) {
-      library = data.library;
+    if(parsed.library && parsed.library.length > 0) {
+      library = parsed.library;
       saveLib();
     }
     setSyncStatus('ok');
     return true;
   } catch(e) {
-    console.error('Pull failed:', e.message);
+    console.error('Sync pull failed:', e.message);
     setSyncStatus('error', e.message);
     return false;
   }
 }
 
-// Debounced push — waits 3s after last change before pushing
 function schedulePush() {
   clearTimeout(syncTimer);
-  syncTimer = setTimeout(function(){ pushToCloud(); }, 3000);
+  syncTimer = setTimeout(function() { pushToCloud(); }, 3000);
 }
 
-// Override save() to also schedule a cloud push
 var _origSave = save;
-save = function(){
-  _origSave();
-  schedulePush();
-};
+save = function() { _origSave(); schedulePush(); };
 var _origSaveLib = saveLib;
-saveLib = function(){
-  _origSaveLib();
-  schedulePush();
-};
+saveLib = function() { _origSaveLib(); schedulePush(); };
 
-// On startup: pull from cloud first, then render
 async function initWithSync() {
-  setSyncStatus('syncing');
   var pulled = await pullFromCloud();
   renderAll();
   renderLib();
-  if(!pulled) {
-    // If pull failed, still render with local data
-    setSyncStatus(navigator.onLine ? 'error' : 'offline');
-  }
 }
 
-// Listen for coming back online
-window.addEventListener('online', function(){ schedulePush(); setSyncStatus('syncing'); });
-window.addEventListener('offline', function(){ setSyncStatus('offline'); });
+window.addEventListener('online', function() { schedulePush(); });
+window.addEventListener('offline', function() { setSyncStatus('offline'); });
 
 
 document.getElementById('prev-wk').addEventListener('click',function(){weekOffset--;openSess={};sessTabs={};renderAll();});
