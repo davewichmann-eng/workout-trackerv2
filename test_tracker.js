@@ -178,15 +178,13 @@ const contentChecks = [
   ['Completed in updateStats', 's.completed'],
   // Version check (prevents stale localStorage)
   ['localStorage version check', "wt_v'"],
-  // JSONbin sync
-  ['Sync: GIST_TOKEN defined', 'GIST_TOKEN'],
-  ['Sync: api.github.com/gists', 'api.github.com/gists'],
-  ['Sync: pushToCloud function', 'pushToCloud'],
-  ['Sync: pullFromCloud function', 'pullFromCloud'],
-  ['Sync: schedulePush debounce', 'schedulePush'],
-  ['Sync: initWithSync on startup', 'initWithSync'],
-  ['Sync: sync-status element', 'id="sync-status"'],
-  ['Sync: online/offline listeners', "window.addEventListener('online'"],
+  // Export / Import
+  ['Export: exportData function', 'exportData'],
+  ['Export: importData function', 'importData'],
+  ['Export: export button', 'export-btn'],
+  ['Export: import input', 'import-input'],
+  ['Export: creates JSON blob', 'application/json'],
+  ['Export: filename with date', 'workout_data_'],
   // Reps stepper
   ['Reps stepper: minus button', 'reps-dec'],
   ['Reps stepper: plus button', 'reps-inc'],
@@ -402,14 +400,12 @@ if (ctx) {
     pass('RING_C constant correct (314.16)');
   } catch(e) { fail('RING_C constant', e.message); }
 
-  // 4.21 Sync functions exist
+  // 4.21 Export/import functions exist
   try {
-    if (typeof ctx.pushToCloud !== 'function') throw new Error('pushToCloud not a function');
-    if (typeof ctx.pullFromCloud !== 'function') throw new Error('pullFromCloud not a function');
-    if (typeof ctx.schedulePush !== 'function') throw new Error('schedulePush not a function');
-    if (typeof ctx.initWithSync !== 'function') throw new Error('initWithSync not a function');
-    pass('Sync functions exist and are callable');
-  } catch(e) { fail('Sync functions', e.message); }
+    if (typeof ctx.exportData !== 'function') throw new Error('exportData not a function');
+    if (typeof ctx.importData !== 'function') throw new Error('importData not a function');
+    pass('exportData and importData functions exist');
+  } catch(e) { fail('Export/import functions', e.message); }
 
   // 4.22 Superset tracker initialises with peers
   try {

@@ -331,10 +331,9 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
   </div>
 </div>
 
-<div style="display:flex;align-items:center;justify-content:flex-end;padding:6px 14px 0;gap:6px">
-  <span style="font-size:10px;color:var(--tx3);text-transform:uppercase;letter-spacing:.05em">cloud sync</span>
-  <span id="sync-status" style="font-size:11px;color:var(--tx3)"></span>
-  <button onclick="pushToCloud()" style="font-size:10px;padding:2px 8px;border-radius:20px;border:0.5px solid var(--br2);background:none;cursor:pointer;color:var(--tx3)">sync now</button>
+<div style="display:flex;align-items:center;justify-content:flex-end;padding:8px 14px 0;gap:8px">
+  <button id="export-btn" style="font-size:12px;padding:5px 14px;border-radius:20px;border:0.5px solid var(--br2);background:none;cursor:pointer;color:var(--tx2)">&#8595; Export data</button>
+  <label id="import-lbl" style="font-size:12px;padding:5px 14px;border-radius:20px;border:0.5px solid var(--br2);background:none;cursor:pointer;color:var(--tx2);margin:0">&#8593; Import data<input type="file" id="import-input" accept=".json" style="display:none"></label>
 </div>
 <div class="days-list" id="days-list"></div>
 
@@ -1286,126 +1285,78 @@ function dropFromLib(libIdx,di,wk){
 // ── Nav ───────────────────────────────────────────────────────────────────────
 
 // ── JSONbin Sync ─────────────────────────────────────────────────────────────
-// -- GitHub Gist Sync --------------------------------------------------------
-// Uses GitHub API - proper CORS support for browser apps
-// Token only needs 'gist' scope
-var GIST_TOKEN = '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';
-var GIST_FILENAME = 'workout_tracker_data.json';
-var GIST_DESC = 'Workout Tracker Data';
-var syncTimer = null;
-var syncStatus = 'idle';
-
-function getSyncId() { try { return localStorage.getItem('wt_gist_id') || ''; } catch(e) { return ''; } }
-function setSyncId(id) { try { localStorage.setItem('wt_gist_id', id); } catch(e) {} }
-
-function setSyncStatus(status, msg) {
-  syncStatus = status;
-  var el = document.getElementById('sync-status');
+// -- Export / Import ---------------------------------------------------------
+function setDataStatus(msg, isError) {
+  var el = document.getElementById('data-status');
   if(!el) return;
-  var icons = {idle:'', syncing:'&#8635; syncing...', ok:'&#10003; synced', error:'&#9888; sync failed', offline:'&#9889; offline'};
-  var colors = {idle:'var(--tx3)', syncing:'var(--tx3)', ok:'var(--ac)', error:'var(--dc)', offline:'#EF9F27'};
-  var label = icons[status] || '';
-  if(status === 'error' && msg) label += ' (' + msg.slice(0,50) + ')';
-  el.innerHTML = label;
-  el.style.color = colors[status] || 'var(--tx3)';
+  el.textContent = msg;
+  el.style.color = isError ? 'var(--dc)' : 'var(--ac)';
+  setTimeout(function(){ el.textContent = ''; }, 3000);
 }
 
-async function pushToCloud() {
-  if(!navigator.onLine) { setSyncStatus('offline'); return; }
-  setSyncStatus('syncing');
+function exportData() {
   try {
-    var payload = JSON.stringify({weekData: weekData, library: library});
-    var gistId = getSyncId();
-    var url, method;
-    if(gistId) {
-      url = 'https://api.github.com/gists/' + gistId;
-      method = 'PATCH';
-    } else {
-      url = 'https://api.github.com/gists';
-      method = 'POST';
-    }
-    var body = {
-      description: GIST_DESC,
-      public: false,
-      files: {}
+    var payload = {
+      version: 1,
+      exportedAt: new Date().toISOString(),
+      weekData: weekData,
+      library: library
     };
-    body.files[GIST_FILENAME] = { content: payload };
-    var res = await fetch(url, {
-      method: method,
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': 'token ' + GIST_TOKEN,
-        'Accept': 'application/vnd.github.v3+json'
-      },
-      body: JSON.stringify(body)
-    });
-    if(!res.ok) { var e = await res.text(); throw new Error('HTTP ' + res.status + ': ' + e.slice(0,80)); }
-    var data = await res.json();
-    if(data.id) setSyncId(data.id);
-    setSyncStatus('ok');
+    var json = JSON.stringify(payload, null, 2);
+    var blob = new Blob([json], {type: 'application/json'});
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    var date = new Date().toISOString().slice(0,10);
+    a.href = url;
+    a.download = 'workout_data_' + date + '.json';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    setDataStatus('Data exported');
   } catch(e) {
-    console.error('Sync push failed:', e.message);
-    setSyncStatus('error', e.message);
+    setDataStatus('Export failed: ' + e.message, true);
   }
 }
 
-async function pullFromCloud() {
-  if(!navigator.onLine) { setSyncStatus('offline'); return false; }
-  var gistId = getSyncId();
-  if(!gistId) { return false; }
-  setSyncStatus('syncing');
-  try {
-    var res = await fetch('https://api.github.com/gists/' + gistId, {
-      headers: {
-        'Authorization': 'token ' + GIST_TOKEN,
-        'Accept': 'application/vnd.github.v3+json'
+function importData(file) {
+  if(!file) return;
+  var reader = new FileReader();
+  reader.onload = function(e) {
+    try {
+      var parsed = JSON.parse(e.target.result);
+      if(!parsed.weekData) throw new Error('Invalid file - no weekData found');
+      // Merge: imported data takes priority, but keep any local weeks not in import
+      var importedWeeks = Object.keys(parsed.weekData);
+      importedWeeks.forEach(function(wk) {
+        weekData[wk] = parsed.weekData[wk];
+      });
+      if(parsed.library && parsed.library.length > 0) {
+        library = parsed.library;
+        saveLib();
       }
-    });
-    if(!res.ok) throw new Error('HTTP ' + res.status);
-    var data = await res.json();
-    var file = data.files && data.files[GIST_FILENAME];
-    if(!file || !file.content) throw new Error('No data in gist');
-    var parsed = JSON.parse(file.content);
-    if(parsed.weekData && Object.keys(parsed.weekData).length > 0) {
-      weekData = parsed.weekData;
       save();
+      renderAll();
+      renderLib();
+      setDataStatus('Imported ' + importedWeeks.length + ' weeks of data');
+    } catch(e) {
+      setDataStatus('Import failed: ' + e.message, true);
     }
-    if(parsed.library && parsed.library.length > 0) {
-      library = parsed.library;
-      saveLib();
-    }
-    setSyncStatus('ok');
-    return true;
-  } catch(e) {
-    console.error('Sync pull failed:', e.message);
-    setSyncStatus('error', e.message);
-    return false;
-  }
+  };
+  reader.readAsText(file);
 }
-
-function schedulePush() {
-  clearTimeout(syncTimer);
-  syncTimer = setTimeout(function() { pushToCloud(); }, 3000);
-}
-
-var _origSave = save;
-save = function() { _origSave(); schedulePush(); };
-var _origSaveLib = saveLib;
-saveLib = function() { _origSaveLib(); schedulePush(); };
-
-async function initWithSync() {
-  var pulled = await pullFromCloud();
-  renderAll();
-  renderLib();
-}
-
-window.addEventListener('online', function() { schedulePush(); });
-window.addEventListener('offline', function() { setSyncStatus('offline'); });
 
 
 document.getElementById('prev-wk').addEventListener('click',function(){weekOffset--;openSess={};sessTabs={};renderAll();});
 document.getElementById('next-wk').addEventListener('click',function(){weekOffset++;openSess={};sessTabs={};renderAll();});
-initWithSync();
+
+document.getElementById('export-btn').addEventListener('click', exportData);
+document.getElementById('import-input').addEventListener('change', function(e){
+  importData(e.target.files[0]);
+  e.target.value = '';
+});
+
+renderAll();
 renderLib();
 </script>
 </body>
