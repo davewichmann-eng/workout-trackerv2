@@ -373,16 +373,7 @@ try {
     localStorage.setItem('wt_v','5');
   }
 } catch(e) {}
-// Always ensure AF - Full Body is in the library
-(function(){
-  try {
-    var hasAF = library.some(function(item){ return item.name === 'AF - Full Body'; });
-    if(!hasAF) {
-      library.push({ name:'AF - Full Body', type:'af', groups: AF_PLAN.map(function(p){ return mkGrp(p.type, p.exs); }), notes:'', prs:[] });
-      saveLib();
-    }
-  } catch(e) {}
-})();
+
 
 function save() { try { localStorage.setItem('wt_d', JSON.stringify(weekData)); } catch(e) {} }
 function saveLib() { try { localStorage.setItem('wt_lib', JSON.stringify(library)); } catch(e) {} }
@@ -1415,6 +1406,15 @@ document.getElementById('import-input').addEventListener('change', function(e){
   importData(e.target.files[0]);
   e.target.value = '';
 });
+
+// Ensure AF - Full Body is always in library
+(function(){
+  var hasAF = library.some(function(item){ return item.name === 'AF - Full Body'; });
+  if(!hasAF) {
+    library.push({ name:'AF - Full Body', type:'af', groups: AF_PLAN.map(function(p){ return mkGrp(p.type, p.exs); }), notes:'', prs:[] });
+    saveLib();
+  }
+})();
 
 renderAll();
 renderLib();
