@@ -1299,7 +1299,9 @@ function setSyncStatus(status, msg) {
   if(!el) return;
   var icons = {idle:'', syncing:'&#8635; syncing...', ok:'&#10003; synced', error:'&#9888; sync failed', offline:'&#9889; offline - saved locally'};
   var colors = {idle:'var(--tx3)', syncing:'var(--tx3)', ok:'var(--ac)', error:'var(--dc)', offline:'#EF9F27'};
-  el.innerHTML = icons[status] || msg || '';
+  var label = icons[status] || '';
+  if(status === 'error' && msg) label += ' (' + msg.slice(0,40) + ')';
+  el.innerHTML = label;
   el.style.color = colors[status] || 'var(--tx3)';
 }
 
@@ -1310,13 +1312,22 @@ async function pushToCloud() {
     var payload = {weekData: weekData, library: library};
     var res = await fetch(JBIN_URL, {
       method: 'PUT',
-      headers: {'Content-Type':'application/json','X-Master-Key':JBIN_KEY,'X-Bin-Versioning':'false'},
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Master-Key': JBIN_KEY,
+        'X-Access-Key': JBIN_KEY,
+        'X-Bin-Versioning': 'false'
+      },
       body: JSON.stringify(payload)
     });
-    if(!res.ok) throw new Error('HTTP ' + res.status);
+    if(!res.ok) {
+      var errText = await res.text();
+      throw new Error('HTTP ' + res.status + ': ' + errText.slice(0,100));
+    }
     setSyncStatus('ok');
   } catch(e) {
-    setSyncStatus('error');
+    console.error('Push failed:', e.message);
+    setSyncStatus('error', e.message);
   }
 }
 
@@ -1325,9 +1336,15 @@ async function pullFromCloud() {
   setSyncStatus('syncing');
   try {
     var res = await fetch(JBIN_URL + '/latest', {
-      headers: {'X-Master-Key': JBIN_KEY}
+      headers: {
+        'X-Master-Key': JBIN_KEY,
+        'X-Access-Key': JBIN_KEY
+      }
     });
-    if(!res.ok) throw new Error('HTTP ' + res.status);
+    if(!res.ok) {
+      var errText = await res.text();
+      throw new Error('HTTP ' + res.status + ': ' + errText.slice(0,100));
+    }
     var json = await res.json();
     var data = json.record;
     if(data && data.weekData && Object.keys(data.weekData).length > 0) {
@@ -1341,7 +1358,8 @@ async function pullFromCloud() {
     setSyncStatus('ok');
     return true;
   } catch(e) {
-    setSyncStatus('error');
+    console.error('Pull failed:', e.message);
+    setSyncStatus('error', e.message);
     return false;
   }
 }
