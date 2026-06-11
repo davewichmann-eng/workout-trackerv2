@@ -278,6 +278,20 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 
 .ex-name-input{flex:1;font-size:13px;border:none;border-bottom:1.5px solid var(--ac);background:none;color:var(--tx);font-family:inherit;padding:2px 0;min-width:0;outline:none}
 .ex-name-input::placeholder{color:var(--tx3)}
+
+/* Library editor */
+.lib-editor{display:none;padding:0 0 20px}
+.lib-editor.open{display:block}
+.lib-editor-hdr{display:flex;align-items:center;gap:10px;padding:10px 12px;border-bottom:0.5px solid var(--br)}
+.lib-back-btn{font-size:13px;padding:5px 12px;border-radius:var(--r);border:0.5px solid var(--br2);background:none;cursor:pointer;color:var(--tx2)}
+.lib-editor-name{flex:1;font-size:16px;font-weight:600;border:none;background:none;color:var(--tx);font-family:inherit}
+.lib-editor-name:focus{outline:none;border-bottom:1.5px solid var(--ac)}
+.lib-editor-del{font-size:12px;padding:5px 10px;border-radius:var(--r);border:0.5px solid var(--dc);background:none;cursor:pointer;color:var(--dc)}
+.lib-main{padding:10px 12px}
+.lib-io-row{display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;align-items:center}
+.lib-io-btn{font-size:12px;padding:5px 12px;border-radius:20px;border:0.5px solid var(--br2);background:none;cursor:pointer;color:var(--tx2)}
+.lib-io-btn:hover{background:var(--bg2)}
+.lib-io-status{font-size:11px;color:var(--tx3)}
 </style>
 </head>
 <body>
@@ -361,7 +375,7 @@ var openSess = {}, sessTabs = {}, dragState = null, menuOpen = null;
 var activeVid = null, openHist = null, histTab = {}, histMetric = {}, charts = {};
 var setTrackers = {}, sessTimers = {};
 var library = [];
-var libOpen = false, libDrag = null;
+var libOpen = false, libDrag = null, libEditIdx = -1;
 
 // Load saved data
 try { weekData = JSON.parse(localStorage.getItem('wt_d') || '{}'); } catch(e) {}
@@ -1284,25 +1298,282 @@ function setupDrop(zone,di,wk,days){
 }
 
 // ── Library ───────────────────────────────────────────────────────────────────
-function renderLib(){
-  var grid=document.getElementById('lib-grid'), count=document.getElementById('lib-count'), chev=document.getElementById('lib-chev');
-  if(!grid) return;
-  count.textContent=library.length?library.length+' workout'+(library.length>1?'s':''):'';
-  chev.className='lib-chev'+(libOpen?' open':'');
-  document.getElementById('lib-body').className='lib-body'+(libOpen?' open':'');
-  if(!libOpen) return;
-  grid.innerHTML='';
-  if(!library.length){grid.innerHTML='<div class="lib-drop-hint">No workouts yet. Add one below or tap the star on any session chip.</div>';return;}
-  library.forEach(function(item,idx){
-    var def=SESS[item.type]||SESS.cardio;
-    var card=document.createElement('div'); card.className='lib-card'; card.draggable=true; card.dataset.libIdx=idx;
-    var gc=(item.groups||[]).length;
-    card.innerHTML='<div class="lib-card-name">'+item.name+'</div><div class="lib-card-meta">'+def.label+(gc?' - '+gc+' group'+(gc>1?'s':''):'')+'</div><button class="lib-card-del" data-idx="'+idx+'">x</button>';
-    card.addEventListener('dragstart',function(e){libDrag=idx;card.classList.add('dragging');e.dataTransfer.effectAllowed='copy';e.dataTransfer.setData('text/plain','lib:'+idx);});
-    card.addEventListener('dragend',function(){card.classList.remove('dragging');libDrag=null;});
-    grid.appendChild(card);
+
+// Estimate workout duration in minutes
+function estimateTime(groups) {
+  if(!groups || !groups.length) return 0;
+  var totalSecs = 0;
+  var SET_TIME = 45;     // seconds per set (work time)
+  var REST_DEFAULT = 90; // seconds rest between sets
+
+  groups.forEach(function(g) {
+    g.exercises.forEach(function(ex) {
+      var sets = parseInt(ex.sets) || 0;
+      var repsStr = (ex.reps || '').toLowerCase();
+      var name = (ex.name || '').toLowerCase();
+
+      // Detect mobility/warmup: no sets, or reps contain "min", "/leg", "/side"
+      var isMobility = !sets
+        || repsStr.indexOf('min') >= 0
+        || repsStr.indexOf('/leg') >= 0
+        || repsStr.indexOf('/side') >= 0
+        || repsStr.indexOf('hold') >= 0;
+
+      // Detect cardio warmup (e.g. "750m" row)
+      var isCardio = !sets && /^\d+m$/.test(repsStr.trim());
+
+      if(isCardio) {
+        // Row/cardio warmup: treat as fixed time (5 min for up to 1000m)
+        totalSecs += 5 * 60;
+      } else if(isMobility) {
+        // Parse explicit minutes: "1 min/leg", "2-5 min/side"
+        var minMatch = repsStr.match(/(\d+)\s*min/);
+        var mins = minMatch ? parseInt(minMatch[1]) : 2;
+        // Double for bilateral (per leg / per side)
+        if(repsStr.indexOf('/leg') >= 0 || repsStr.indexOf('/side') >= 0) mins *= 2;
+        // Cap per exercise
+        mins = Math.min(mins, 8);
+        totalSecs += mins * 60;
+      } else {
+        // Working sets: work time + rest between sets
+        var restSecs = REST_DEFAULT;
+        totalSecs += sets * SET_TIME;
+        totalSecs += Math.max(0, sets - 1) * restSecs;
+        // Rest after last set (transition to next exercise)
+        totalSecs += restSecs;
+      }
+    });
   });
-  grid.querySelectorAll('.lib-card-del').forEach(function(b){b.addEventListener('click',function(e){e.stopPropagation();library.splice(parseInt(b.dataset.idx),1);saveLib();renderLib();});});
+
+  return Math.round(totalSecs / 60);
+}
+
+function fmtEstimate(mins) {
+  if(!mins) return '';
+  if(mins < 60) return '~' + mins + ' min';
+  var h = Math.floor(mins/60), m = mins%60;
+  return '~' + h + 'h' + (m ? ' ' + m + 'm' : '');
+}
+
+function renderLib(){
+  var count=document.getElementById('lib-count'), chev=document.getElementById('lib-chev');
+  var libBody=document.getElementById('lib-body');
+  if(!libBody) return;
+  count.textContent=library.length?library.length+' routine'+(library.length>1?'s':''):'';
+  chev.className='lib-chev'+(libOpen?' open':'');
+  libBody.className='lib-body'+(libOpen?' open':'');
+  if(!libOpen) return;
+
+  // If editing a specific routine, show the editor
+  if(libEditIdx >= 0) {
+    renderLibEditor(libEditIdx);
+    return;
+  }
+
+  // Otherwise show the grid + add row
+  libBody.innerHTML = '<p class="lib-hint">Tap a routine to edit it. Drag onto a day to use it.</p>'
+    + '<div class="lib-grid" id="lib-grid"></div>'
+    + '<div class="lib-add-row">'
+    + '<input type="text" class="lib-add-input" id="lib-name-input" placeholder="New routine name..." maxlength="40">'
+    + '<button class="lib-save-btn" id="lib-save-btn">+ Create</button>'
+    + '</div>'
+    + '<div class="lib-io-row">'
+    + '<button class="lib-io-btn" id="lib-export-btn">&#8595; Export routines</button>'
+    + '<label class="lib-io-btn">&#8593; Import routines<input type="file" id="lib-import-input" accept=".json" style="display:none"></label>'
+    + '</div>'
+    + '<div class="lib-save-status" id="lib-save-status"></div>';
+
+  var grid = document.getElementById('lib-grid');
+  if(!library.length){
+    grid.innerHTML='<div class="lib-drop-hint">No routines yet. Create one below.</div>';
+  } else {
+    library.forEach(function(item,idx){
+      var def=SESS[item.type]||SESS.cardio;
+      var card=document.createElement('div'); card.className='lib-card'; card.draggable=true; card.dataset.libIdx=idx;
+      var gc=(item.groups||[]).length;
+      var est = fmtEstimate(estimateTime(item.groups||[]));
+      card.innerHTML='<div class="lib-card-name">'+item.name+'</div>'
+        +'<div class="lib-card-meta">'+(gc?gc+' exercise group'+(gc>1?'s':''):'no exercises yet - tap to build')+(est?' &middot; '+est:'')+'</div>'
+        +'<button class="lib-card-del" data-idx="'+idx+'" title="Delete routine">x</button>';
+      card.addEventListener('click', function(e){
+        if(e.target.classList.contains('lib-card-del')) return;
+        libEditIdx=idx; renderLib();
+      });
+      card.addEventListener('dragstart',function(e){libDrag=idx;card.classList.add('dragging');e.dataTransfer.effectAllowed='copy';e.dataTransfer.setData('text/plain','lib:'+idx);});
+      card.addEventListener('dragend',function(){card.classList.remove('dragging');libDrag=null;});
+      grid.appendChild(card);
+    });
+    grid.querySelectorAll('.lib-card-del').forEach(function(b){
+      b.addEventListener('click',function(e){
+        e.stopPropagation();
+        if(confirm('Delete "'+library[parseInt(b.dataset.idx)].name+'"?')){
+          library.splice(parseInt(b.dataset.idx),1);saveLib();renderLib();
+        }
+      });
+    });
+  }
+
+  // Wire add button
+  var addBtn=document.getElementById('lib-save-btn');
+  if(addBtn) addBtn.addEventListener('click',function(){
+    var nameEl=document.getElementById('lib-name-input');
+    var name=(nameEl&&nameEl.value.trim())||'';
+    var status=document.getElementById('lib-save-status');
+    if(!name){if(status)status.textContent='Please enter a name.';return;}
+    var newIdx=library.length;
+    library.push({name:name,type:'pull',groups:[],notes:'',prs:[]});
+    saveLib();
+    libEditIdx=newIdx;
+    renderLib();
+  });
+
+  // Wire export/import
+  var expBtn=document.getElementById('lib-export-btn');
+  if(expBtn) expBtn.addEventListener('click', exportRoutines);
+  var impInp=document.getElementById('lib-import-input');
+  if(impInp) impInp.addEventListener('change',function(e){importRoutines(e.target.files[0]);e.target.value='';});
+}
+
+function renderLibEditor(idx) {
+  var item = library[idx];
+  if(!item) { libEditIdx=-1; renderLib(); return; }
+  var libBody = document.getElementById('lib-body');
+  if(!libBody) return;
+
+  // Build exercise group HTML same as session editor
+  function grpHtml(g, gi) {
+    var isS=g.type==='superset', isD=g.type==='dropset';
+    var h='<div class="ex-group" data-lgi="'+gi+'">'
+      +'<div class="ex-ghdr"><span class="gbadge '+(isS?'gb-s':isD?'gb-d':'gb-n')+'">'+(isS?'Superset':isD?'Drop set':'Single')+'</span>'
+      +'<button class="lc-cycle" data-lgi="'+gi+'">cycle</button>'
+      +'<button class="del-grp lc-delgrp" data-lgi="'+gi+'">x</button></div>'
+      +'<div class="ex-chdr"><span style="flex:1">exercise</span><span style="width:44px;text-align:center">sets</span><span style="width:44px;text-align:center">reps</span><span style="width:44px;text-align:center">kg</span><span style="width:20px"></span></div>';
+    g.exercises.forEach(function(ex,ei){
+      var conn=isS&&ei>0?'<div class="conn">+</div>':isD&&ei>0?'<div class="conn"><div class="vline"></div></div>':'<div class="conn"></div>';
+      h+='<div class="ex-row"><div class="ex-main">'+conn
+        +(ex.name
+          ?'<button class="ex-name-btn" data-lgi="'+gi+'" data-lei="'+ei+'">'+ex.name+'</button>'
+          :'<input type="text" class="ex-name-input lc-name" placeholder="Exercise name..." data-lgi="'+gi+'" data-lei="'+ei+'">')
+        +'<input type="number" class="nin lc-f" value="'+(ex.sets||'')+'" placeholder="-" data-lgi="'+gi+'" data-lei="'+ei+'" data-lf="sets" inputmode="numeric">'
+        +'<input type="text" class="nin lc-f" value="'+(ex.reps||'')+'" placeholder="-" data-lgi="'+gi+'" data-lei="'+ei+'" data-lf="reps">'
+        +'<input type="number" class="nin lc-f" value="'+(ex.weight||'')+'" placeholder="-" step="0.5" data-lgi="'+gi+'" data-lei="'+ei+'" data-lf="weight" inputmode="decimal">'
+        +'<button class="del-ex lc-delex" data-lgi="'+gi+'" data-lei="'+ei+'">x</button>'
+        +'</div>'
+        +(ex.notes?'<div style="padding:2px 8px 4px 24px;font-size:11px;color:var(--tx3);font-style:italic">'+ex.notes+'</div>':'')
+        +'</div>';
+    });
+    h+='<button class="add-ex-btn lc-addex" data-lgi="'+gi+'">+ add '+(isS?'to superset':isD?'drop':'exercise')+'</button></div>';
+    return h;
+  }
+
+  var groupsHtml = '';
+  (item.groups||[]).forEach(function(g,gi){ groupsHtml+=grpHtml(g,gi); });
+
+  libBody.innerHTML='<div class="lib-editor open">'
+    +'<div class="lib-editor-hdr">'
+    +'<button class="lib-back-btn" id="lib-back">&#8592; Library</button>'
+    +'<input type="text" class="lib-editor-name" id="lib-edit-name" value="'+item.name+'" placeholder="Routine name">'
+    +'<button class="lib-editor-del" id="lib-edit-del">Delete</button>'
+    +'</div>'
+    +'<div class="lib-main">'
+    +groupsHtml
+    +'<div class="add-grp-row">'
+    +'<button class="add-grp-btn lc-addgrp" data-gt="normal">+ single</button>'
+    +'<button class="add-grp-btn lc-addgrp" data-gt="superset">+ superset</button>'
+    +'<button class="add-grp-btn lc-addgrp" data-gt="dropset">+ drop set</button>'
+    +'</div>'
+    +'</div>'
+    +'</div>';
+
+  // Back button
+  document.getElementById('lib-back').addEventListener('click',function(){libEditIdx=-1;renderLib();});
+
+  // Rename
+  document.getElementById('lib-edit-name').addEventListener('input',function(e){item.name=e.target.value;saveLib();});
+
+  // Delete routine
+  document.getElementById('lib-edit-del').addEventListener('click',function(){
+    if(confirm('Delete "'+item.name+'"?')){library.splice(idx,1);saveLib();libEditIdx=-1;renderLib();}
+  });
+
+  // Field inputs
+  libBody.querySelectorAll('.lc-f').forEach(function(inp){
+    inp.addEventListener('input',function(){
+      var g=item.groups[parseInt(inp.dataset.lgi)];
+      if(g&&g.exercises[parseInt(inp.dataset.lei)]) g.exercises[parseInt(inp.dataset.lei)][inp.dataset.lf]=inp.value;
+      saveLib();
+    });
+  });
+
+  // Name inputs for new exercises
+  libBody.querySelectorAll('.lc-name').forEach(function(inp){
+    setTimeout(function(){try{inp.focus();}catch(e){}},80);
+    function saveLcName(){
+      var g=item.groups[parseInt(inp.dataset.lgi)];
+      if(g&&g.exercises[parseInt(inp.dataset.lei)]&&inp.value.trim()){
+        g.exercises[parseInt(inp.dataset.lei)].name=inp.value.trim();
+        saveLib(); renderLibEditor(idx);
+      }
+    }
+    inp.addEventListener('blur',saveLcName);
+    inp.addEventListener('keydown',function(e){if(e.key==='Enter'){e.preventDefault();saveLcName();}});
+  });
+
+  // Double-tap name button to rename
+  libBody.querySelectorAll('.ex-name-btn').forEach(function(btn){
+    btn.addEventListener('dblclick',function(){
+      var gi=parseInt(btn.dataset.lgi),ei=parseInt(btn.dataset.lei);
+      var ex=item.groups[gi].exercises[ei];
+      var inp=document.createElement('input');
+      inp.type='text';inp.className='ex-name-input';inp.value=ex.name;
+      btn.parentNode.replaceChild(inp,btn);inp.focus();inp.select();
+      function save2(){if(inp.value.trim()){ex.name=inp.value.trim();saveLib();}renderLibEditor(idx);}
+      inp.addEventListener('blur',save2);
+      inp.addEventListener('keydown',function(e){if(e.key==='Enter'){e.preventDefault();save2();}});
+    });
+  });
+
+  // Cycle group type
+  libBody.querySelectorAll('.lc-cycle').forEach(function(b){
+    b.addEventListener('click',function(){
+      var g=item.groups[parseInt(b.dataset.lgi)];
+      var cyc=['normal','superset','dropset'];
+      g.type=cyc[(cyc.indexOf(g.type)+1)%cyc.length];
+      if(g.type!=='normal'&&g.exercises.length<2) g.exercises.push({name:'',sets:'',reps:'',weight:'',notes:'',ytUrl:'',planned:false,ai:false});
+      saveLib(); renderLibEditor(idx);
+    });
+  });
+
+  // Delete group
+  libBody.querySelectorAll('.lc-delgrp').forEach(function(b){
+    b.addEventListener('click',function(){item.groups.splice(parseInt(b.dataset.lgi),1);saveLib();renderLibEditor(idx);});
+  });
+
+  // Add exercise to group
+  libBody.querySelectorAll('.lc-addex').forEach(function(b){
+    b.addEventListener('click',function(){
+      item.groups[parseInt(b.dataset.lgi)].exercises.push({name:'',sets:'',reps:'',weight:'',notes:'',ytUrl:'',planned:false,ai:false});
+      saveLib(); renderLibEditor(idx);
+    });
+  });
+
+  // Delete exercise
+  libBody.querySelectorAll('.lc-delex').forEach(function(b){
+    b.addEventListener('click',function(){
+      var g=item.groups[parseInt(b.dataset.lgi)];
+      if(g.exercises.length>1) g.exercises.splice(parseInt(b.dataset.lei),1);
+      saveLib(); renderLibEditor(idx);
+    });
+  });
+
+  // Add group
+  libBody.querySelectorAll('.lc-addgrp').forEach(function(b){
+    b.addEventListener('click',function(){
+      var gt=b.dataset.gt;
+      item.groups.push(mkGrp(gt, gt==='normal'?['']:['','']));
+      saveLib(); renderLibEditor(idx);
+    });
+  });
 }
 
 document.getElementById('lib-toggle').addEventListener('click',function(){libOpen=!libOpen;renderLib();});
@@ -1343,6 +1614,46 @@ function setDataStatus(msg, isError) {
   el.textContent = msg;
   el.style.color = isError ? 'var(--dc)' : 'var(--ac)';
   setTimeout(function(){ el.textContent = ''; }, 3000);
+}
+
+function exportRoutines() {
+  try {
+    var payload = {
+      version: 1,
+      exportedAt: new Date().toISOString(),
+      routines: library
+    };
+    var json = JSON.stringify(payload, null, 2);
+    var blob = new Blob([json], {type:'application/json'});
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url;
+    a.download = 'workout_routines_' + new Date().toISOString().slice(0,10) + '.json';
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    setDataStatus('Routines exported');
+  } catch(e) { setDataStatus('Export failed: ' + e.message, true); }
+}
+
+function importRoutines(file) {
+  if(!file) return;
+  var reader = new FileReader();
+  reader.onload = function(e) {
+    try {
+      var parsed = JSON.parse(e.target.result);
+      var routines = parsed.routines || parsed; // support both wrapped and bare array
+      if(!Array.isArray(routines)) throw new Error('Invalid file - expected array of routines');
+      var added = 0;
+      routines.forEach(function(r) {
+        if(!r.name) return;
+        var exists = library.some(function(l){ return l.name === r.name; });
+        if(!exists) { library.push(r); added++; }
+      });
+      saveLib(); renderLib();
+      setDataStatus('Imported ' + added + ' routine' + (added!==1?'s':'') + ' (' + (routines.length-added) + ' already existed)');
+    } catch(e) { setDataStatus('Import failed: ' + e.message, true); }
+  };
+  reader.readAsText(file);
 }
 
 function exportData() {
