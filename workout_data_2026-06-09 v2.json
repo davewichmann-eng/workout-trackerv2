@@ -1,0 +1,1229 @@
+{
+  "version": 1,
+  "exportedAt": "2026-06-09T19:21:19.498Z",
+  "weekData": {
+    "2026-06-08": [
+      [
+        {
+          "id": "s1781023028414",
+          "type": "pull",
+          "groups": [
+            {
+              "type": "normal",
+              "exercises": [
+                {
+                  "name": "Deadlift",
+                  "planned": true,
+                  "sets": "",
+                  "reps": "",
+                  "weight": "",
+                  "notes": "",
+                  "ytUrl": "",
+                  "ai": false
+                }
+              ]
+            },
+            {
+              "type": "normal",
+              "exercises": [
+                {
+                  "name": "Pull-ups",
+                  "planned": true,
+                  "sets": "",
+                  "reps": "",
+                  "weight": "",
+                  "notes": "",
+                  "ytUrl": "",
+                  "ai": false
+                }
+              ]
+            },
+            {
+              "type": "normal",
+              "exercises": [
+                {
+                  "name": "Barbell row",
+                  "planned": true,
+                  "sets": "",
+                  "reps": "",
+                  "weight": "",
+                  "notes": "",
+                  "ytUrl": "",
+                  "ai": false
+                }
+              ]
+            },
+            {
+              "type": "normal",
+              "exercises": [
+                {
+                  "name": "Face pull",
+                  "planned": true,
+                  "sets": "",
+                  "reps": "",
+                  "weight": "",
+                  "notes": "",
+                  "ytUrl": "",
+                  "ai": false
+                }
+              ]
+            },
+            {
+              "type": "normal",
+              "exercises": [
+                {
+                  "name": "Bicep curl",
+                  "planned": true,
+                  "sets": "",
+                  "reps": "",
+                  "weight": "",
+                  "notes": "",
+                  "ytUrl": "",
+                  "ai": false
+                }
+              ]
+            }
+          ],
+          "cardio": {
+            "type": "Run",
+            "duration": "",
+            "distance": "",
+            "calories": ""
+          },
+          "notes": "",
+          "prs": [],
+          "cals": ""
+        }
+      ],
+      [
+        {
+          "id": "s1781032659109",
+          "type": "af",
+          "libName": "AF - Full Body",
+          "groups": [
+            {
+              "type": "normal",
+              "exercises": [
+                {
+                  "name": "Row machine warmup",
+                  "planned": true,
+                  "sets": "1",
+                  "reps": "750m",
+                  "weight": "",
+                  "notes": "Steady pace, focus on form",
+                  "ytUrl": "",
+                  "ai": false
+                }
+              ]
+            },
+            {
+              "type": "normal",
+              "exercises": [
+                {
+                  "name": "Foam Roll - Quad",
+                  "planned": true,
+                  "sets": "1",
+                  "reps": "1 min/leg",
+                  "weight": "",
+                  "notes": "Slow, pause on tight spots",
+                  "ytUrl": "",
+                  "ai": false
+                }
+              ]
+            },
+            {
+              "type": "normal",
+              "exercises": [
+                {
+                  "name": "Foam Roll - IT Band",
+                  "planned": true,
+                  "sets": "1",
+                  "reps": "1 min/leg",
+                  "weight": "",
+                  "notes": "Roll outer thigh hip to knee",
+                  "ytUrl": "",
+                  "ai": false
+                }
+              ]
+            },
+            {
+              "type": "normal",
+              "exercises": [
+                {
+                  "name": "Couch Stretch",
+                  "planned": true,
+                  "sets": "1",
+                  "reps": "1 min/leg",
+                  "weight": "",
+                  "notes": "Hip flexors, stay tall",
+                  "ytUrl": "",
+                  "ai": false
+                }
+              ]
+            },
+            {
+              "type": "normal",
+              "exercises": [
+                {
+                  "name": "Tempo Back Squat",
+                  "planned": true,
+                  "sets": "3",
+                  "reps": "8",
+                  "weight": "40",
+                  "notes": "Core braced, hip hinge, no arch - 3s down 1s pause 1s up",
+                  "ytUrl": "",
+                  "ai": false
+                }
+              ]
+            },
+            {
+              "type": "normal",
+              "exercises": [
+                {
+                  "name": "Romanian Dead Lift",
+                  "planned": true,
+                  "sets": "3",
+                  "reps": "8",
+                  "weight": "40",
+                  "notes": "Hinge at hip, soft knee, bar close to body",
+                  "ytUrl": "",
+                  "ai": false
+                }
+              ]
+            },
+            {
+              "type": "normal",
+              "exercises": [
+                {
+                  "name": "Backwards Lunge",
+                  "planned": true,
+                  "sets": "3",
+                  "reps": "12",
+                  "weight": "0",
+                  "notes": "Step back, knee tracks over foot, stay upright",
+                  "ytUrl": "",
+                  "ai": false
+                }
+              ]
+            },
+            {
+              "type": "normal",
+              "exercises": [
+                {
+                  "name": "Bench Press",
+                  "planned": true,
+                  "sets": "3",
+                  "reps": "8",
+                  "weight": "45",
+                  "notes": "Controlled descent, full range of motion",
+                  "ytUrl": "",
+                  "ai": false
+                }
+              ]
+            },
+            {
+              "type": "normal",
+              "exercises": [
+                {
+                  "name": "Shoulder Press",
+                  "planned": true,
+                  "sets": "3",
+                  "reps": "12",
+                  "weight": "20",
+                  "notes": "Brace core, no arching, press overhead",
+                  "ytUrl": "",
+                  "ai": false
+                }
+              ]
+            },
+            {
+              "type": "normal",
+              "exercises": [
+                {
+                  "name": "Press Ups",
+                  "planned": true,
+                  "sets": "3",
+                  "reps": "20",
+                  "weight": "",
+                  "notes": "Full range, chest to floor, elbows 45 degrees",
+                  "ytUrl": "",
+                  "ai": false
+                }
+              ]
+            }
+          ],
+          "cardio": {
+            "type": "Run",
+            "duration": "",
+            "distance": "",
+            "calories": ""
+          },
+          "notes": "",
+          "prs": [],
+          "cals": ""
+        }
+      ],
+      [
+        {
+          "id": "s1781032659110",
+          "type": "pull",
+          "libName": "Treadmill Run",
+          "groups": [],
+          "cardio": {
+            "type": "Run",
+            "duration": "30",
+            "distance": "5",
+            "calories": ""
+          },
+          "notes": "",
+          "prs": [],
+          "cals": ""
+        }
+      ],
+      [
+        {
+          "id": "s1781032659111",
+          "type": "af",
+          "libName": "AF - Full Body",
+          "groups": [
+            {
+              "type": "normal",
+              "exercises": [
+                {
+                  "name": "Row machine warmup",
+                  "planned": true,
+                  "sets": "1",
+                  "reps": "750m",
+                  "weight": "",
+                  "notes": "Steady pace, focus on form",
+                  "ytUrl": "",
+                  "ai": false
+                }
+              ]
+            },
+            {
+              "type": "normal",
+              "exercises": [
+                {
+                  "name": "Foam Roll - Quad",
+                  "planned": true,
+                  "sets": "1",
+                  "reps": "1 min/leg",
+                  "weight": "",
+                  "notes": "Slow, pause on tight spots",
+                  "ytUrl": "",
+                  "ai": false
+                }
+              ]
+            },
+            {
+              "type": "normal",
+              "exercises": [
+                {
+                  "name": "Foam Roll - IT Band",
+                  "planned": true,
+                  "sets": "1",
+                  "reps": "1 min/leg",
+                  "weight": "",
+                  "notes": "Roll outer thigh hip to knee",
+                  "ytUrl": "",
+                  "ai": false
+                }
+              ]
+            },
+            {
+              "type": "normal",
+              "exercises": [
+                {
+                  "name": "Couch Stretch",
+                  "planned": true,
+                  "sets": "1",
+                  "reps": "1 min/leg",
+                  "weight": "",
+                  "notes": "Hip flexors, stay tall",
+                  "ytUrl": "",
+                  "ai": false
+                }
+              ]
+            },
+            {
+              "type": "normal",
+              "exercises": [
+                {
+                  "name": "Tempo Back Squat",
+                  "planned": true,
+                  "sets": "3",
+                  "reps": "8",
+                  "weight": "40",
+                  "notes": "Core braced, hip hinge, no arch - 3s down 1s pause 1s up",
+                  "ytUrl": "",
+                  "ai": false
+                }
+              ]
+            },
+            {
+              "type": "normal",
+              "exercises": [
+                {
+                  "name": "Romanian Dead Lift",
+                  "planned": true,
+                  "sets": "3",
+                  "reps": "8",
+                  "weight": "40",
+                  "notes": "Hinge at hip, soft knee, bar close to body",
+                  "ytUrl": "",
+                  "ai": false
+                }
+              ]
+            },
+            {
+              "type": "normal",
+              "exercises": [
+                {
+                  "name": "Backwards Lunge",
+                  "planned": true,
+                  "sets": "3",
+                  "reps": "12",
+                  "weight": "0",
+                  "notes": "Step back, knee tracks over foot, stay upright",
+                  "ytUrl": "",
+                  "ai": false
+                }
+              ]
+            },
+            {
+              "type": "normal",
+              "exercises": [
+                {
+                  "name": "Bench Press",
+                  "planned": true,
+                  "sets": "3",
+                  "reps": "8",
+                  "weight": "45",
+                  "notes": "Controlled descent, full range of motion",
+                  "ytUrl": "",
+                  "ai": false
+                }
+              ]
+            },
+            {
+              "type": "normal",
+              "exercises": [
+                {
+                  "name": "Shoulder Press",
+                  "planned": true,
+                  "sets": "3",
+                  "reps": "12",
+                  "weight": "20",
+                  "notes": "Brace core, no arching, press overhead",
+                  "ytUrl": "",
+                  "ai": false
+                }
+              ]
+            },
+            {
+              "type": "normal",
+              "exercises": [
+                {
+                  "name": "Press Ups",
+                  "planned": true,
+                  "sets": "3",
+                  "reps": "20",
+                  "weight": "",
+                  "notes": "Full range, chest to floor, elbows 45 degrees",
+                  "ytUrl": "",
+                  "ai": false
+                }
+              ]
+            }
+          ],
+          "cardio": {
+            "type": "Run",
+            "duration": "",
+            "distance": "",
+            "calories": ""
+          },
+          "notes": "",
+          "prs": [],
+          "cals": ""
+        }
+      ],
+      [
+        {
+          "id": "s1781032659112",
+          "type": "cardio",
+          "libName": "Cross Trainer",
+          "groups": [],
+          "cardio": {
+            "type": "Run",
+            "duration": "",
+            "distance": "",
+            "calories": ""
+          },
+          "notes": "",
+          "prs": [],
+          "cals": ""
+        }
+      ],
+      [
+        {
+          "id": "s1781023028419",
+          "type": "circuit",
+          "groups": [],
+          "cardio": {
+            "type": "Run",
+            "duration": "",
+            "distance": "",
+            "calories": ""
+          },
+          "notes": "",
+          "prs": [],
+          "cals": ""
+        }
+      ],
+      [
+        {
+          "id": "s1781032659113",
+          "type": "af",
+          "libName": "AF - Full Body",
+          "groups": [
+            {
+              "type": "normal",
+              "exercises": [
+                {
+                  "name": "Row machine warmup",
+                  "planned": true,
+                  "sets": "1",
+                  "reps": "750m",
+                  "weight": "",
+                  "notes": "Steady pace, focus on form",
+                  "ytUrl": "",
+                  "ai": false
+                }
+              ]
+            },
+            {
+              "type": "normal",
+              "exercises": [
+                {
+                  "name": "Foam Roll - Quad",
+                  "planned": true,
+                  "sets": "1",
+                  "reps": "1 min/leg",
+                  "weight": "",
+                  "notes": "Slow, pause on tight spots",
+                  "ytUrl": "",
+                  "ai": false
+                }
+              ]
+            },
+            {
+              "type": "normal",
+              "exercises": [
+                {
+                  "name": "Foam Roll - IT Band",
+                  "planned": true,
+                  "sets": "1",
+                  "reps": "1 min/leg",
+                  "weight": "",
+                  "notes": "Roll outer thigh hip to knee",
+                  "ytUrl": "",
+                  "ai": false
+                }
+              ]
+            },
+            {
+              "type": "normal",
+              "exercises": [
+                {
+                  "name": "Couch Stretch",
+                  "planned": true,
+                  "sets": "1",
+                  "reps": "1 min/leg",
+                  "weight": "",
+                  "notes": "Hip flexors, stay tall",
+                  "ytUrl": "",
+                  "ai": false
+                }
+              ]
+            },
+            {
+              "type": "normal",
+              "exercises": [
+                {
+                  "name": "Tempo Back Squat",
+                  "planned": true,
+                  "sets": "3",
+                  "reps": "8",
+                  "weight": "40",
+                  "notes": "Core braced, hip hinge, no arch - 3s down 1s pause 1s up",
+                  "ytUrl": "",
+                  "ai": false
+                }
+              ]
+            },
+            {
+              "type": "normal",
+              "exercises": [
+                {
+                  "name": "Romanian Dead Lift",
+                  "planned": true,
+                  "sets": "3",
+                  "reps": "8",
+                  "weight": "40",
+                  "notes": "Hinge at hip, soft knee, bar close to body",
+                  "ytUrl": "",
+                  "ai": false
+                }
+              ]
+            },
+            {
+              "type": "normal",
+              "exercises": [
+                {
+                  "name": "Backwards Lunge",
+                  "planned": true,
+                  "sets": "3",
+                  "reps": "12",
+                  "weight": "0",
+                  "notes": "Step back, knee tracks over foot, stay upright",
+                  "ytUrl": "",
+                  "ai": false
+                }
+              ]
+            },
+            {
+              "type": "normal",
+              "exercises": [
+                {
+                  "name": "Bench Press",
+                  "planned": true,
+                  "sets": "3",
+                  "reps": "8",
+                  "weight": "45",
+                  "notes": "Controlled descent, full range of motion",
+                  "ytUrl": "",
+                  "ai": false
+                }
+              ]
+            },
+            {
+              "type": "normal",
+              "exercises": [
+                {
+                  "name": "Shoulder Press",
+                  "planned": true,
+                  "sets": "3",
+                  "reps": "12",
+                  "weight": "20",
+                  "notes": "Brace core, no arching, press overhead",
+                  "ytUrl": "",
+                  "ai": false
+                }
+              ]
+            },
+            {
+              "type": "normal",
+              "exercises": [
+                {
+                  "name": "Press Ups",
+                  "planned": true,
+                  "sets": "3",
+                  "reps": "20",
+                  "weight": "",
+                  "notes": "Full range, chest to floor, elbows 45 degrees",
+                  "ytUrl": "",
+                  "ai": false
+                }
+              ]
+            }
+          ],
+          "cardio": {
+            "type": "Run",
+            "duration": "",
+            "distance": "",
+            "calories": ""
+          },
+          "notes": "",
+          "prs": [],
+          "cals": ""
+        }
+      ]
+    ]
+  },
+  "library": [
+    {
+      "name": "Standard Pull",
+      "type": "pull",
+      "groups": [
+        {
+          "type": "normal",
+          "exercises": [
+            {
+              "name": "Deadlift",
+              "planned": true,
+              "sets": "",
+              "reps": "",
+              "weight": "",
+              "notes": "",
+              "ytUrl": "",
+              "ai": false
+            }
+          ]
+        },
+        {
+          "type": "normal",
+          "exercises": [
+            {
+              "name": "Pull-ups",
+              "planned": true,
+              "sets": "",
+              "reps": "",
+              "weight": "",
+              "notes": "",
+              "ytUrl": "",
+              "ai": false
+            }
+          ]
+        },
+        {
+          "type": "normal",
+          "exercises": [
+            {
+              "name": "Barbell row",
+              "planned": true,
+              "sets": "",
+              "reps": "",
+              "weight": "",
+              "notes": "",
+              "ytUrl": "",
+              "ai": false
+            }
+          ]
+        },
+        {
+          "type": "normal",
+          "exercises": [
+            {
+              "name": "Face pull",
+              "planned": true,
+              "sets": "",
+              "reps": "",
+              "weight": "",
+              "notes": "",
+              "ytUrl": "",
+              "ai": false
+            }
+          ]
+        },
+        {
+          "type": "normal",
+          "exercises": [
+            {
+              "name": "Bicep curl",
+              "planned": true,
+              "sets": "",
+              "reps": "",
+              "weight": "",
+              "notes": "",
+              "ytUrl": "",
+              "ai": false
+            }
+          ]
+        }
+      ],
+      "notes": "",
+      "prs": []
+    },
+    {
+      "name": "Standard Push",
+      "type": "push",
+      "groups": [
+        {
+          "type": "normal",
+          "exercises": [
+            {
+              "name": "Bench press",
+              "planned": true,
+              "sets": "",
+              "reps": "",
+              "weight": "",
+              "notes": "",
+              "ytUrl": "",
+              "ai": false
+            }
+          ]
+        },
+        {
+          "type": "normal",
+          "exercises": [
+            {
+              "name": "Overhead press",
+              "planned": true,
+              "sets": "",
+              "reps": "",
+              "weight": "",
+              "notes": "",
+              "ytUrl": "",
+              "ai": false
+            }
+          ]
+        },
+        {
+          "type": "normal",
+          "exercises": [
+            {
+              "name": "Incline DB press",
+              "planned": true,
+              "sets": "",
+              "reps": "",
+              "weight": "",
+              "notes": "",
+              "ytUrl": "",
+              "ai": false
+            }
+          ]
+        },
+        {
+          "type": "superset",
+          "exercises": [
+            {
+              "name": "Lateral raise",
+              "planned": true,
+              "sets": "",
+              "reps": "",
+              "weight": "",
+              "notes": "",
+              "ytUrl": "",
+              "ai": false
+            },
+            {
+              "name": "Tricep pushdown",
+              "planned": true,
+              "sets": "",
+              "reps": "",
+              "weight": "",
+              "notes": "",
+              "ytUrl": "",
+              "ai": false
+            }
+          ]
+        }
+      ],
+      "notes": "",
+      "prs": []
+    },
+    {
+      "name": "Standard Upper",
+      "type": "upper",
+      "groups": [
+        {
+          "type": "normal",
+          "exercises": [
+            {
+              "name": "Pull-ups",
+              "planned": true,
+              "sets": "",
+              "reps": "",
+              "weight": "",
+              "notes": "",
+              "ytUrl": "",
+              "ai": false
+            }
+          ]
+        },
+        {
+          "type": "normal",
+          "exercises": [
+            {
+              "name": "DB shoulder press",
+              "planned": true,
+              "sets": "",
+              "reps": "",
+              "weight": "",
+              "notes": "",
+              "ytUrl": "",
+              "ai": false
+            }
+          ]
+        },
+        {
+          "type": "normal",
+          "exercises": [
+            {
+              "name": "Cable row",
+              "planned": true,
+              "sets": "",
+              "reps": "",
+              "weight": "",
+              "notes": "",
+              "ytUrl": "",
+              "ai": false
+            }
+          ]
+        },
+        {
+          "type": "normal",
+          "exercises": [
+            {
+              "name": "Chest fly",
+              "planned": true,
+              "sets": "",
+              "reps": "",
+              "weight": "",
+              "notes": "",
+              "ytUrl": "",
+              "ai": false
+            }
+          ]
+        },
+        {
+          "type": "normal",
+          "exercises": [
+            {
+              "name": "Hammer curl",
+              "planned": true,
+              "sets": "",
+              "reps": "",
+              "weight": "",
+              "notes": "",
+              "ytUrl": "",
+              "ai": false
+            }
+          ]
+        }
+      ],
+      "notes": "",
+      "prs": []
+    },
+    {
+      "name": "AF Beginner Legs",
+      "type": "legs",
+      "groups": [
+        {
+          "type": "normal",
+          "exercises": [
+            {
+              "name": "Foam roll quads",
+              "planned": true,
+              "sets": "1",
+              "reps": "2-5 min/side",
+              "weight": "",
+              "notes": "Slow, pause on tight spots",
+              "ytUrl": "",
+              "ai": false
+            }
+          ]
+        },
+        {
+          "type": "normal",
+          "exercises": [
+            {
+              "name": "Foam roll IT bands",
+              "planned": true,
+              "sets": "1",
+              "reps": "2-5 min/side",
+              "weight": "",
+              "notes": "Roll outer thigh hip to knee",
+              "ytUrl": "",
+              "ai": false
+            }
+          ]
+        },
+        {
+          "type": "normal",
+          "exercises": [
+            {
+              "name": "Couch stretch",
+              "planned": true,
+              "sets": "1",
+              "reps": "1-2 min/leg",
+              "weight": "",
+              "notes": "Hip flexors stay tall",
+              "ytUrl": "",
+              "ai": false
+            }
+          ]
+        },
+        {
+          "type": "normal",
+          "exercises": [
+            {
+              "name": "Tempo back squat",
+              "planned": true,
+              "sets": "4",
+              "reps": "10-12",
+              "weight": "",
+              "notes": "Core braced hip hinge no arch - 3s down 1s pause 1s up",
+              "ytUrl": "mmb618X9Ieg",
+              "ai": false
+            }
+          ]
+        },
+        {
+          "type": "normal",
+          "exercises": [
+            {
+              "name": "Hamstring banded stretch",
+              "planned": true,
+              "sets": "1",
+              "reps": "1-2 min/leg",
+              "weight": "",
+              "notes": "Hold breathe into stretch",
+              "ytUrl": "",
+              "ai": false
+            }
+          ]
+        },
+        {
+          "type": "normal",
+          "exercises": [
+            {
+              "name": "Calf raise stretch",
+              "planned": true,
+              "sets": "1",
+              "reps": "1-2 min/leg",
+              "weight": "",
+              "notes": "Slow and controlled",
+              "ytUrl": "",
+              "ai": false
+            }
+          ]
+        },
+        {
+          "type": "normal",
+          "exercises": [
+            {
+              "name": "Romanian deadlift tempo",
+              "planned": true,
+              "sets": "4",
+              "reps": "8-10",
+              "weight": "",
+              "notes": "Light weight hinge at hip soft knee bar close",
+              "ytUrl": "Q5vwsJFwhyg",
+              "ai": false
+            }
+          ]
+        },
+        {
+          "type": "normal",
+          "exercises": [
+            {
+              "name": "Elevated pigeon pose",
+              "planned": true,
+              "sets": "1",
+              "reps": "Hold/side",
+              "weight": "",
+              "notes": "Glute and hip opener",
+              "ytUrl": "",
+              "ai": false
+            }
+          ]
+        },
+        {
+          "type": "normal",
+          "exercises": [
+            {
+              "name": "Wall piriformis",
+              "planned": true,
+              "sets": "1",
+              "reps": "Hold/side",
+              "weight": "",
+              "notes": "External rotator stretch",
+              "ytUrl": "",
+              "ai": false
+            }
+          ]
+        }
+      ],
+      "notes": "",
+      "prs": []
+    },
+    {
+      "name": "Cross Trainer",
+      "type": "cardio",
+      "groups": [],
+      "notes": "",
+      "prs": []
+    },
+    {
+      "name": "Football",
+      "type": "cardio",
+      "groups": [],
+      "notes": "",
+      "prs": []
+    },
+    {
+      "name": "Standard Circuit",
+      "type": "circuit",
+      "groups": [],
+      "notes": "",
+      "prs": []
+    },
+    {
+      "name": "AF - Full Body",
+      "type": "af",
+      "groups": [
+        {
+          "type": "normal",
+          "exercises": [
+            {
+              "name": "Row machine warmup",
+              "planned": true,
+              "sets": "1",
+              "reps": "750m",
+              "weight": "",
+              "notes": "Steady pace, focus on form",
+              "ytUrl": "",
+              "ai": false
+            }
+          ]
+        },
+        {
+          "type": "normal",
+          "exercises": [
+            {
+              "name": "Foam Roll - Quad",
+              "planned": true,
+              "sets": "1",
+              "reps": "1 min/leg",
+              "weight": "",
+              "notes": "Slow, pause on tight spots",
+              "ytUrl": "",
+              "ai": false
+            }
+          ]
+        },
+        {
+          "type": "normal",
+          "exercises": [
+            {
+              "name": "Foam Roll - IT Band",
+              "planned": true,
+              "sets": "1",
+              "reps": "1 min/leg",
+              "weight": "",
+              "notes": "Roll outer thigh hip to knee",
+              "ytUrl": "",
+              "ai": false
+            }
+          ]
+        },
+        {
+          "type": "normal",
+          "exercises": [
+            {
+              "name": "Couch Stretch",
+              "planned": true,
+              "sets": "1",
+              "reps": "1 min/leg",
+              "weight": "",
+              "notes": "Hip flexors, stay tall",
+              "ytUrl": "",
+              "ai": false
+            }
+          ]
+        },
+        {
+          "type": "normal",
+          "exercises": [
+            {
+              "name": "Tempo Back Squat",
+              "planned": true,
+              "sets": "3",
+              "reps": "8",
+              "weight": "40",
+              "notes": "Core braced, hip hinge, no arch - 3s down 1s pause 1s up",
+              "ytUrl": "",
+              "ai": false
+            }
+          ]
+        },
+        {
+          "type": "normal",
+          "exercises": [
+            {
+              "name": "Romanian Dead Lift",
+              "planned": true,
+              "sets": "3",
+              "reps": "8",
+              "weight": "40",
+              "notes": "Hinge at hip, soft knee, bar close to body",
+              "ytUrl": "",
+              "ai": false
+            }
+          ]
+        },
+        {
+          "type": "normal",
+          "exercises": [
+            {
+              "name": "Backwards Lunge",
+              "planned": true,
+              "sets": "3",
+              "reps": "12",
+              "weight": "0",
+              "notes": "Step back, knee tracks over foot, stay upright",
+              "ytUrl": "",
+              "ai": false
+            }
+          ]
+        },
+        {
+          "type": "normal",
+          "exercises": [
+            {
+              "name": "Bench Press",
+              "planned": true,
+              "sets": "3",
+              "reps": "8",
+              "weight": "45",
+              "notes": "Controlled descent, full range of motion",
+              "ytUrl": "",
+              "ai": false
+            }
+          ]
+        },
+        {
+          "type": "normal",
+          "exercises": [
+            {
+              "name": "Shoulder Press",
+              "planned": true,
+              "sets": "3",
+              "reps": "12",
+              "weight": "20",
+              "notes": "Brace core, no arching, press overhead",
+              "ytUrl": "",
+              "ai": false
+            }
+          ]
+        },
+        {
+          "type": "normal",
+          "exercises": [
+            {
+              "name": "Press Ups",
+              "planned": true,
+              "sets": "3",
+              "reps": "20",
+              "weight": "",
+              "notes": "Full range, chest to floor, elbows 45 degrees",
+              "ytUrl": "",
+              "ai": false
+            }
+          ]
+        }
+      ],
+      "notes": "",
+      "prs": []
+    },
+    {
+      "name": "Treadmill Run",
+      "type": "pull",
+      "groups": [],
+      "notes": "",
+      "prs": []
+    }
+  ]
+}
