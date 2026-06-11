@@ -952,7 +952,7 @@ function buildChip(sess,di,wk){
 
   if(isOpen){
     var body=document.createElement('div'); body.className='chip-body open';
-    var hasW=['pull','push','legs','upper','circuit'].includes(sess.type);
+    var hasW=['pull','push','legs','upper','circuit','af'].includes(sess.type)||((sess.groups||[]).length>0);
     var tabs=['exercises','cardio','prs','notes'];
     var at=tabs.includes(tab)?tab:'exercises'; sessTabs[sess.id]=at;
 
