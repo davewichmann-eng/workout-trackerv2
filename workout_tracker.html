@@ -355,7 +355,8 @@ var SESS = {
   upper:   {label:'Upper',   dot:'dw', nm:'nw'},
   circuit: {label:'Circuit', dot:'dx', nm:'nx'},
   cardio:  {label:'Cardio',  dot:'dc', nm:'nc'},
-  af:      {label:'Full Body', dot:'dw', nm:'nw'}
+  af:      {label:'Full Body', dot:'dw', nm:'nw'},
+  af_bicep: {label:'Full Body (bicep-friendly)', dot:'dw', nm:'nw'}
 };
 var AI_HINTS = {
   pull:['Hypertrophy focus','Strength focus','Cable only','Minimal equipment'],
@@ -454,6 +455,20 @@ var AF_PLAN = [
   {type:'normal', exs:[['Press Ups', '3', '20', '', 'Full range, chest to floor, elbows 45 degrees', '']]}
 ];
 
+var AF_BICEP_PLAN = [
+  {type:'normal', exs:[['Exercise bike warmup', '1', '5 min', '', 'Steady pace, easy resistance, get the legs moving', '']]},
+  {type:'normal', exs:[['Foam Roll - Quad', '1', '1 min/leg', '', 'Slow, pause on tight spots', '']]},
+  {type:'normal', exs:[['Foam Roll - IT Band', '1', '1 min/leg', '', 'Roll outer thigh hip to knee', '']]},
+  {type:'normal', exs:[['Couch Stretch', '1', '1 min/leg', '', 'Hip flexors, stay tall', '']]},
+  {type:'normal', exs:[['Tempo Back Squat', '3', '8', '40', 'Core braced, hip hinge, no arch - 3s down 1s pause 1s up', '']]},
+  {type:'normal', exs:[['Romanian Dead Lift', '3', '8', '40', 'Hinge at hip, soft knee, bar close to body - use straps if grip aggravates elbow', '']]},
+  {type:'normal', exs:[['Backwards Lunge', '3', '12', '0', 'Step back, knee tracks over foot, stay upright', '']]},
+  {type:'normal', exs:[['Machine Chest Press', '3', '8', '', 'Fixed path, controlled tempo, avoid full lockout if tender', '']]},
+  {type:'normal', exs:[['Lateral Raise', '3', '12', '', 'Light weight, elbow soft and fixed, avoid overhead pressing', '']]},
+  {type:'normal', exs:[['Cable Tricep Pushdown', '3', '12', '', 'Pure elbow extension, keep biceps relaxed, avoid skull crushers if tender', '']]}
+];
+
+
 
 var PLANNED = {
   pull: [['Deadlift'],['Pull-ups'],['Barbell row'],['Face pull'],['Bicep curl']],
@@ -468,6 +483,8 @@ function mkSess(type) {
     groups = LEGS_PLAN.map(function(p){ return mkGrp(p.type, p.exs); });
   } else if(type === 'af') {
     groups = AF_PLAN.map(function(p){ return mkGrp(p.type, p.exs); });
+  } else if(type === 'af_bicep') {
+    groups = AF_BICEP_PLAN.map(function(p){ return mkGrp(p.type, p.exs); });
   } else {
     var pl = PLANNED[type] || [];
     groups = pl.map(function(ns){ return mkGrp(ns.length>1?'superset':'normal', ns.map(function(n){return [n];})); });
@@ -1723,6 +1740,11 @@ document.getElementById('import-input').addEventListener('change', function(e){
   var hasAF = library.some(function(item){ return item.name === 'AF - Full Body'; });
   if(!hasAF) {
     library.push({ name:'AF - Full Body', type:'af', groups: AF_PLAN.map(function(p){ return mkGrp(p.type, p.exs); }), notes:'', prs:[] });
+    saveLib();
+  }
+  var hasAFBicep = library.some(function(item){ return item.name === 'AF - Full Body (bicep-friendly)'; });
+  if(!hasAFBicep) {
+    library.push({ name:'AF - Full Body (bicep-friendly)', type:'af_bicep', groups: AF_BICEP_PLAN.map(function(p){ return mkGrp(p.type, p.exs); }), notes:'Modified for distal biceps tendon - avoids heavy elbow flexion/extension under load', prs:[] });
     saveLib();
   }
 })();
