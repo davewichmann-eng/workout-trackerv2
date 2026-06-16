@@ -398,6 +398,24 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .settings-colour-preview{font-size:11px;color:var(--tx3)}
 .settings-reset{font-size:12px;padding:6px 14px;border-radius:var(--r);border:0.5px solid var(--br2);background:none;cursor:pointer;color:var(--tx3);margin-top:16px}
 /* Dynamic colour classes - overridden by JS-injected inline styles */
+
+.type-sel{font-size:11px;padding:2px 6px;border-radius:var(--r);border:0.5px solid var(--br2);background:var(--bg2);color:var(--tx);font-family:inherit;cursor:pointer;max-width:100px}
+.lib-type-row{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:0.5px solid var(--br);margin-bottom:8px}
+.lib-type-row label{font-size:13px;color:var(--tx3)}
+.lib-type-sel-full{font-size:14px;padding:6px 10px;border-radius:var(--r);border:0.5px solid var(--br2);background:var(--bg2);color:var(--tx);font-family:inherit;cursor:pointer}
+
+/* TM progress stats bar */
+.tm-stats-bar{display:flex;align-items:center;justify-content:space-between;padding:4px 14px 6px;font-size:11px;color:var(--tx3)}
+.tm-pct{font-weight:700;color:var(--ac);font-size:13px}
+.tm-remain{color:var(--tx3)}
+.tm-pct-track{height:3px;background:var(--bg3);margin:0 14px 6px;border-radius:2px}
+.tm-pct-fill{height:3px;background:var(--ac);border-radius:2px;transition:width .3s}
+/* Set log in TM tile */
+.tm-set-log{width:100%;max-width:320px;margin-top:10px}
+.tm-set-log-row{display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:0.5px solid var(--br);font-size:13px}
+.tm-set-log-num{font-size:11px;font-weight:600;color:var(--tx3);width:40px;flex-shrink:0}
+.tm-set-log-val{color:var(--tx);font-weight:600;flex:1}
+.tm-set-log-time{font-size:11px;color:var(--tx3)}
 </style>
 </head>
 <body>
@@ -457,6 +475,11 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
     <button class="tm-session-btn" id="tm-session-btn">Start</button>
   </div>
   <div class="tm-progress" id="tm-progress"></div>
+  <div class="tm-pct-track"><div class="tm-pct-fill" id="tm-pct-fill" style="width:0%"></div></div>
+  <div class="tm-stats-bar">
+    <span class="tm-pct" id="tm-pct">0%</span>
+    <span class="tm-remain" id="tm-remain"></span>
+  </div>
   <div class="tm-body" id="tm-body"></div>
   <div class="tm-nav">
     <button class="tm-nav-btn" id="tm-prev-ex">&#8592; Prev</button>
@@ -1135,6 +1158,7 @@ function buildChip(sess,di,wk){
   hdr.innerHTML='<span class="chip-drag">|||</span>'
     +'<span class="chip-dot" style="background:'+chipCol+'"></span>'
     +'<span class="chip-nm">'+chipLabel+'</span>'
+    +'<select class="type-sel" data-sid="'+sess.id+'" data-wk="'+wk+'">'+typeOptions(sess.type)+'</select>'
     +'<span class="chip-sum">'+sp.join(' - ')+'</span>'
     +'<button class="lib-star" title="Save to library">&#9733;</button>'
     +'<button class="chip-del">x</button>';
@@ -1344,6 +1368,19 @@ function buildChip(sess,di,wk){
     var startTMBtn=body.querySelector('#start-tm-'+sess.id);
     if(startTMBtn) startTMBtn.addEventListener('click',function(){startTraining(sess.id,wk);});
 
+    // Type selector in chip header
+    var typeSels = body.querySelectorAll('.type-sel[data-sid="'+sess.id+'"]');
+    typeSels.forEach(function(sel){
+      sel.addEventListener('change', function(e){
+        e.stopPropagation();
+        var s = findSess(sel.dataset.sid, sel.dataset.wk);
+        if(!s) return;
+        s.type = sel.value;
+        if(!s.libName) s.libName = null; // clear libName so chip shows type label
+        save(); renderAll();
+      });
+    });
+
     var aib=body.querySelector('#aib-'+sess.id),ais=body.querySelector('#ais-'+sess.id),aip=body.querySelector('#aip-'+sess.id);
     if(aib&&ais&&aip) aib.addEventListener('click',function(){genRoutine(sess.id,aip.value.trim()||'Standard '+SESS[sess.type].label+' session',wk,ais,aib);});
     body.querySelectorAll('.ai-chip').forEach(function(c){c.addEventListener('click',function(){if(aip)aip.value=c.dataset.s;});});
@@ -1507,44 +1544,56 @@ function setupDrop(zone,di,wk,days){
 function estimateTime(groups) {
   if(!groups || !groups.length) return 0;
   var totalSecs = 0;
-  var SET_TIME = 45;     // seconds per set (work time)
-  var REST_DEFAULT = 90; // seconds rest between sets
+  var SET_TIME = 60;       // seconds per set (work time - realistic for tempo/heavy work)
+  var REST_BETWEEN = 90;   // seconds rest between sets
+  var TRANSITION = 120;    // seconds between exercises (setup, weights, reset)
 
   groups.forEach(function(g) {
     g.exercises.forEach(function(ex) {
       var sets = parseInt(ex.sets) || 0;
-      var repsStr = (ex.reps || '').toLowerCase();
+      var repsStr = (ex.reps || '').toLowerCase().trim();
       var name = (ex.name || '').toLowerCase();
 
-      // Detect mobility/warmup: no sets, or reps contain "min", "/leg", "/side"
+      // Detect cardio/distance warmup: e.g. "750m", "5km", "10 min"
+      // Works whether sets is 0 or 1 (row machine warmup has sets=1)
+      var isCardio = /^\d+(\.\d+)?\s*(m|km|miles?)$/.test(repsStr)
+        || (sets <= 1 && /^\d+\s*min(utes?)?$/.test(repsStr));
+
+      // Detect mobility/warmup: reps contain "min/leg", "/side", "hold", "each"
       var isMobility = !sets
-        || repsStr.indexOf('min') >= 0
         || repsStr.indexOf('/leg') >= 0
         || repsStr.indexOf('/side') >= 0
-        || repsStr.indexOf('hold') >= 0;
-
-      // Detect cardio warmup (e.g. "750m" row)
-      var isCardio = !sets && /^\d+m$/.test(repsStr.trim());
+        || repsStr.indexOf('hold') >= 0
+        || repsStr.indexOf('each') >= 0
+        || (repsStr.indexOf('min') >= 0 && sets <= 1);
 
       if(isCardio) {
-        // Row/cardio warmup: treat as fixed time (5 min for up to 1000m)
-        totalSecs += 5 * 60;
+        // Cardio warmup: scale by distance/duration
+        var distMatch = repsStr.match(/^(\d+(\.\d+)?)\s*(m|km|miles?)$/);
+        if(distMatch) {
+          var dist = parseFloat(distMatch[1]);
+          var unit = distMatch[3];
+          // Rough pace: rowing ~250m/min, cycling ~3km/min, running ~200m/min
+          var metres = unit === 'km' ? dist*1000 : unit.indexOf('mile') >= 0 ? dist*1609 : dist;
+          totalSecs += Math.min(Math.round(metres / 200) * 60, 15*60); // cap 15 min
+        } else {
+          // Duration-based: use as stated
+          var minMatch2 = repsStr.match(/(\d+)/);
+          totalSecs += (minMatch2 ? parseInt(minMatch2[1]) : 5) * 60;
+        }
       } else if(isMobility) {
-        // Parse explicit minutes: "1 min/leg", "2-5 min/side"
+        // Mobility/stretch: parse stated duration
         var minMatch = repsStr.match(/(\d+)\s*min/);
         var mins = minMatch ? parseInt(minMatch[1]) : 2;
-        // Double for bilateral (per leg / per side)
-        if(repsStr.indexOf('/leg') >= 0 || repsStr.indexOf('/side') >= 0) mins *= 2;
-        // Cap per exercise
-        mins = Math.min(mins, 8);
+        // Double for bilateral
+        if(repsStr.indexOf('/leg') >= 0 || repsStr.indexOf('/side') >= 0 || repsStr.indexOf('each') >= 0) mins *= 2;
+        mins = Math.min(mins, 10);
         totalSecs += mins * 60;
       } else {
-        // Working sets: work time + rest between sets
-        var restSecs = REST_DEFAULT;
-        totalSecs += sets * SET_TIME;
-        totalSecs += Math.max(0, sets - 1) * restSecs;
-        // Rest after last set (transition to next exercise)
-        totalSecs += restSecs;
+        // Working sets: work time + rest between sets + transition
+        totalSecs += sets * SET_TIME;                          // work
+        totalSecs += Math.max(0, sets - 1) * REST_BETWEEN;    // rest between sets
+        totalSecs += TRANSITION;                               // transition to next exercise
       }
     });
   });
@@ -1679,6 +1728,10 @@ function renderLibEditor(idx) {
     +'<input type="text" class="lib-editor-name" id="lib-edit-name" value="'+item.name+'" placeholder="Routine name">'
     +'<button class="lib-editor-del" id="lib-edit-del">Delete</button>'
     +'</div>'
+    +'<div class="lib-type-row">'
+    +'<label>Category</label>'
+    +'<select class="lib-type-sel-full" id="lib-edit-type">'+typeOptions(item.type)+'</select>'
+    +'</div>'
     +'<div class="lib-main">'
     +groupsHtml
     +'<div class="add-grp-row">'
@@ -1694,6 +1747,13 @@ function renderLibEditor(idx) {
 
   // Rename
   document.getElementById('lib-edit-name').addEventListener('input',function(e){item.name=e.target.value;saveLib();});
+
+  // Type selector
+  var libTypeSel = document.getElementById('lib-edit-type');
+  if(libTypeSel) libTypeSel.addEventListener('change', function(){
+    item.type = libTypeSel.value;
+    saveLib();
+  });
 
   // Delete routine
   document.getElementById('lib-edit-del').addEventListener('click',function(){
@@ -1856,6 +1916,24 @@ function stopNoSleepVideo() {
     try { noSleepVideo.pause(); noSleepVideo.remove(); } catch(e){}
     noSleepVideo = null;
   }
+}
+
+
+// Build <option> elements for session type selector
+function typeOptions(current) {
+  var types = [
+    {v:'pull', l:'Pull'},
+    {v:'push', l:'Push'},
+    {v:'legs', l:'Legs'},
+    {v:'upper', l:'Upper'},
+    {v:'circuit', l:'Circuit'},
+    {v:'cardio', l:'Cardio'},
+    {v:'af', l:'AF Full Body'},
+    {v:'af_bicep', l:'AF Bicep Friendly'}
+  ];
+  return types.map(function(t){
+    return '<option value="'+t.v+'"'+(t.v===current?' selected':'')+'>'+t.l+'</option>';
+  }).join('');
 }
 
 function buildFlatList(sess) {
@@ -2051,6 +2129,39 @@ function renderTM() {
     progEl.appendChild(d);
   });
 
+  // % complete + estimated remaining time
+  var totalSetsAll = 0, doneSetsAll = 0;
+  tmState.flat.forEach(function(it){
+    var Ti = setTrackers[it.vk];
+    var planned = Ti ? Ti.totalSets : (parseInt(sess.groups[it.gi].exercises[it.ei].sets)||3);
+    totalSetsAll += planned;
+    doneSetsAll += Ti ? Math.min(Ti.setsDone, planned) : 0;
+  });
+  var pct = totalSetsAll > 0 ? Math.round(doneSetsAll / totalSetsAll * 100) : 0;
+  var pctEl = document.getElementById('tm-pct');
+  var fillEl = document.getElementById('tm-pct-fill');
+  var remainEl = document.getElementById('tm-remain');
+  if(pctEl) pctEl.textContent = pct + '% complete';
+  if(fillEl) fillEl.style.width = pct + '%';
+  if(remainEl) {
+    // Estimate remaining time: count unstarted/partial exercises
+    var remainSecs = 0;
+    tmState.flat.forEach(function(it){
+      var Ti = setTrackers[it.vk];
+      var ex2 = sess.groups[it.gi].exercises[it.ei];
+      var planned = Ti ? Ti.totalSets : (parseInt(ex2.sets)||3);
+      var done = Ti ? Math.min(Ti.setsDone, planned) : 0;
+      var remaining = planned - done;
+      if(remaining > 0) {
+        remainSecs += remaining * 60;                          // set time
+        remainSecs += Math.max(0, remaining - 1) * 90;        // rest between
+        if(done === 0) remainSecs += 120;                     // transition if not started
+      }
+    });
+    var remainMins = Math.round(remainSecs / 60);
+    remainEl.textContent = remainMins > 0 ? '~' + remainMins + ' min left' : 'almost done!';
+  }
+
   // Nav label + buttons
   document.getElementById('tm-nav-lbl').textContent = (tmState.idx+1) + ' / ' + tmState.flat.length;
   var prevBtn = document.getElementById('tm-prev-ex'), nextBtn = document.getElementById('tm-next-ex');
@@ -2097,6 +2208,26 @@ function renderTM() {
     if(ex.sets) html += '<span>Plan: <b>'+ex.sets+'</b> sets</span>';
     if(ex.reps) html += '<span><b>'+ex.reps+'</b> reps</span>';
     if(ex.weight) html += '<span><b>'+ex.weight+'</b>kg</span>';
+    html += '</div>';
+  }
+
+  // Completed set log - show what's been done so far for this exercise
+  if(T.setLog && T.setLog.length > 0) {
+    html += '<div class="tm-set-log">';
+    T.setLog.forEach(function(entry) {
+      var val = '';
+      if(entry.reps && entry.kg) val = entry.reps + ' reps @ ' + entry.kg + 'kg';
+      else if(entry.reps) val = entry.reps + ' reps';
+      else if(entry.kg) val = entry.kg + 'kg';
+      else val = 'logged';
+      var secs = Math.round((entry.time||0)/1000);
+      var timeStr = secs > 0 ? pad2(Math.floor(secs/60))+':'+pad2(secs%60) : '';
+      html += '<div class="tm-set-log-row">'
+        + '<span class="tm-set-log-num">Set '+entry.setNum+'</span>'
+        + '<span class="tm-set-log-val">'+val+'</span>'
+        + (timeStr ? '<span class="tm-set-log-time">'+timeStr+'</span>' : '')
+        + '</div>';
+    });
     html += '</div>';
   }
 

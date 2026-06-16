@@ -219,6 +219,20 @@ const contentChecks = [
   ['Settings: getContrastColour function', 'getContrastColour'],
   ['Settings: localStorage key wt_colours', 'wt_colours'],
   ['Settings: reset to defaults button', 'settings-reset'],
+  // Session type selector
+  ['Type selector: typeOptions function', 'typeOptions'],
+  ['Type selector: chip dropdown', 'type-sel'],
+  ['Type selector: library editor dropdown', 'lib-type-sel-full'],
+  ['Type selector: lib-edit-type id', 'lib-edit-type'],
+  // Training Mode - % complete and remaining time
+  ['Training Mode: % complete display', 'tm-pct'],
+  ['Training Mode: progress fill bar', 'tm-pct-fill'],
+  ['Training Mode: remaining time display', 'tm-remain'],
+  ['Training Mode: stats bar', 'tm-stats-bar'],
+  // Training Mode - set log on tile
+  ['Training Mode: set log display', 'tm-set-log'],
+  ['Training Mode: set log row', 'tm-set-log-row'],
+  ['Training Mode: set log value', 'tm-set-log-val'],
   ['Training Mode: history shown (last time)', 'last time'],
   ['Training Mode: history shown (personal best)', 'personal best'],
   ['Training Mode: session timer clock', 'tm-session-clock'],
@@ -518,6 +532,63 @@ if (ctx) {
     if (!ST.run) throw new Error('session timer should be running after first set starts');
     pass('autoStartSessionTimer starts session timer on first set');
   } catch(e) { fail('autoStartSessionTimer', e.message); }
+
+  // 4.18b % complete calculation
+  try {
+    const sess = ctx.mkSess('pull');
+    const wk = ctx.getWK(0);
+    ctx.getWeek(wk)[4].push(sess);
+    const flat = ctx.buildFlatList(sess);
+    // Simulate 0% complete
+    var totalSets = 0, doneSets = 0;
+    flat.forEach(function(it){
+      var Ti = ctx.setTrackers[it.vk];
+      var planned = Ti ? Ti.totalSets : 3;
+      totalSets += planned;
+      doneSets += Ti ? Math.min(Ti.setsDone, planned) : 0;
+    });
+    var pct = totalSets > 0 ? Math.round(doneSets/totalSets*100) : 0;
+    if (pct !== 0) throw new Error('Expected 0% at start, got ' + pct + '%');
+    // Now complete first set of first exercise
+    ctx.tmState = { sessId: sess.id, wk: wk, flat: flat, idx: 0 };
+    const vk = flat[0].vk;
+    ctx.getTracker(vk, 3);
+    ctx.startMySet(vk);
+    ctx.doneMySet(vk);
+    totalSets = 0; doneSets = 0;
+    flat.forEach(function(it){
+      var Ti = ctx.setTrackers[it.vk];
+      var planned = Ti ? Ti.totalSets : 3;
+      totalSets += planned;
+      doneSets += Ti ? Math.min(Ti.setsDone, planned) : 0;
+    });
+    pct = totalSets > 0 ? Math.round(doneSets/totalSets*100) : 0;
+    if (pct === 0) throw new Error('Expected >0% after completing a set');
+    pass('% complete calculates correctly: 0% at start, ' + pct + '% after first set');
+  } catch(e) { fail('% complete calculation', e.message); }
+
+  // 4.18c set log appears in setTrackers after doneMySet
+  try {
+    const vk2 = ctx.tmState ? ctx.tmState.flat[0].vk : null;
+    if (!vk2) throw new Error('tmState not set');
+    const T = ctx.setTrackers[vk2];
+    if (!T) throw new Error('tracker not found');
+    if (!T.setLog || T.setLog.length === 0) throw new Error('setLog empty after completing a set');
+    const entry = T.setLog[0];
+    if (entry.setNum !== 1) throw new Error('setNum should be 1, got ' + entry.setNum);
+    pass('setLog populated correctly after doneMySet (setNum, reps, kg fields present)');
+  } catch(e) { fail('setLog in tracker', e.message); }
+
+  // 4.19a typeOptions generates correct option elements
+  try {
+    const opts = ctx.typeOptions('legs');
+    if (!opts.includes('value="legs"')) throw new Error('legs option missing');
+    if (!opts.includes('selected')) throw new Error('selected attribute missing for current type');
+    if (!opts.includes('value="pull"')) throw new Error('pull option missing');
+    const count = (opts.match(/value=/g)||[]).length;
+    if (count !== 8) throw new Error('expected 8 options, got ' + count);
+    pass('typeOptions generates 8 options with correct selected state');
+  } catch(e) { fail('typeOptions', e.message); }
 
   // 4.19b Settings colour functions
   try {
