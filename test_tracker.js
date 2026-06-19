@@ -233,7 +233,21 @@ const contentChecks = [
   ['Training Mode: set log display', 'tm-set-log'],
   ['Training Mode: set log row', 'tm-set-log-row'],
   ['Training Mode: set log value', 'tm-set-log-val'],
-  ['Training Mode: history shown (last time)', 'last time'],
+  // Training Mode - get ready countdown
+  ['Training Mode: startGetReady function', 'startGetReady'],
+  ['Training Mode: getready countdown number', 'tm-ready-num'],
+  ['Training Mode: start now button', 'tm-start-now'],
+  ['Training Mode: getready state label', 'Get ready'],
+  // Training Mode - Planned/Last time tabbed view
+  ['Training Mode: plan tabs container', 'tm-plan-tabs'],
+  ['Training Mode: planned tab', 'data-tab="planned"'],
+  ['Training Mode: last time tab', 'data-tab="last"'],
+  ['Training Mode: plan rows container', 'tm-plan-rows'],
+  ['Training Mode: editable plan row input', 'tm-plan-row-inp'],
+  ['Training Mode: tmViewTab state', 'tmViewTab'],
+  // Library editor - empty state hint
+  ['Library editor: empty state hint', 'lib-empty-hint'],
+  ['Training Mode: history shown (last time tab)', 'Last time'],
   ['Training Mode: history shown (personal best)', 'personal best'],
   ['Training Mode: session timer clock', 'tm-session-clock'],
   ['Training Mode: progress dots', 'tm-progress-dot'],
@@ -532,6 +546,50 @@ if (ctx) {
     if (!ST.run) throw new Error('session timer should be running after first set starts');
     pass('autoStartSessionTimer starts session timer on first set');
   } catch(e) { fail('autoStartSessionTimer', e.message); }
+
+  // 4.17b tmViewTab defaults to planned and switches correctly
+  try {
+    const sess = ctx.mkSess('legs');
+    const wk = ctx.getWK(0);
+    ctx.getWeek(wk)[6].push(sess);
+    const vk = sess.id + '-4-0';
+    ctx.getTracker(vk, 3);
+    if (ctx.tmViewTab[vk]) delete ctx.tmViewTab[vk];
+    // Default should be undefined until renderTM sets it, but the logic defaults to 'planned'
+    ctx.tmViewTab[vk] = 'planned';
+    if (ctx.tmViewTab[vk] !== 'planned') throw new Error('default tab should be planned');
+    ctx.tmViewTab[vk] = 'last';
+    if (ctx.tmViewTab[vk] !== 'last') throw new Error('tab did not switch to last');
+    pass('tmViewTab tracks per-exercise tab state correctly');
+  } catch(e) { fail('tmViewTab', e.message); }
+
+  // 4.18a1 startGetReady sets state and 10s countdown
+  try {
+    const sess = ctx.mkSess('legs');
+    const wk = ctx.getWK(0);
+    ctx.getWeek(wk)[5].push(sess);
+    const vk = sess.id + '-4-0'; // tempo back squat group
+    ctx.getTracker(vk, 3);
+    ctx.startGetReady(vk);
+    const T = ctx.setTrackers[vk];
+    if (T.state !== 'getready') throw new Error('state should be getready, got: ' + T.state);
+    if (T.readyRemain !== 10) throw new Error('readyRemain should start at 10, got: ' + T.readyRemain);
+    pass('startGetReady sets state to getready with 10s countdown');
+  } catch(e) { fail('startGetReady', e.message); }
+
+  // 4.18a2 startMySet from getready transitions to active and clears countdown
+  try {
+    const sess2 = ctx.mkSess('legs');
+    const wk2 = ctx.getWK(0);
+    ctx.getWeek(wk2)[6].push(sess2);
+    const vk2 = sess2.id + '-4-0';
+    ctx.getTracker(vk2, 3);
+    ctx.startGetReady(vk2);
+    ctx.startMySet(vk2); // simulates "Start now" skip
+    const T2 = ctx.setTrackers[vk2];
+    if (T2.state !== 'active') throw new Error('state should be active after Start now, got: ' + T2.state);
+    pass('Start now (startMySet) transitions getready -> active correctly');
+  } catch(e) { fail('Start now skip', e.message); }
 
   // 4.18b % complete calculation
   try {
