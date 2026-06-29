@@ -2959,7 +2959,7 @@ applySessColours();
 // Muscle group mapping - which session types / exercise keywords hit which groups
 var MUSCLE_MAP = {
   chest:    ['bench','press up','push up','chest','dip','fly'],
-  back:     ['row','pull up','pull-up','pullup','deadlift','rdl','lat','face pull'],
+  back:     ['single arm row','bent over row','cable row','seated row','pull up','pull-up','pullup','deadlift','rdl','face pull','lat pulldown'],
   shoulder: ['overhead press','ohp','lateral raise','shoulder','face pull','press'],
   legs:     ['squat','lunge','leg press','leg extension','calf','rdl','deadlift','hip thrust','glute'],
   core:     ['plank','sit up','situp','crunch','leg raise','dead bug','hollow','bicycle'],
@@ -3056,8 +3056,10 @@ function analyseWeek(days) {
   if(result.maxConsecutive >= 3) result.warnings.push(result.maxConsecutive + ' consecutive training days — risk of overreaching');
   if(result.totalMins > 360) result.warnings.push('Over 6 hours total training — consider reducing volume');
   if(result.totalSessions > 6) result.warnings.push(result.totalSessions + ' sessions this week — very high frequency');
-  if((result.muscleCounts.chest||0) > 3) result.warnings.push('Chest hit ' + result.muscleCounts.chest + '× — needs 48h recovery between sessions');
-  if((result.muscleCounts.legs||0) > 2) result.warnings.push('Legs hit ' + result.muscleCounts.legs + '× — heavy leg work needs 72h recovery');
+  if((result.muscleCounts.chest||0) > 3) result.warnings.push('Chest hit ' + result.muscleCounts.chest + '× this week — make sure 48h between chest sessions');
+  if((result.muscleCounts.back||0) > 3) result.warnings.push('Back hit ' + result.muscleCounts.back + '× this week — ensure adequate recovery between sessions');
+  if((result.muscleCounts.legs||0) > 3) result.warnings.push('Legs hit ' + result.muscleCounts.legs + '× — heavy leg work needs 72h recovery');
+  if((result.muscleCounts.shoulder||0) > 3) result.warnings.push('Shoulders hit ' + result.muscleCounts.shoulder + '× — rotator cuff needs recovery time');
 
   // Tips
   if(result.restDays === 0) result.tips.push('Schedule at least one full rest day — even active recovery (walk, stretch) counts');
@@ -3113,10 +3115,14 @@ function renderLoadBar() {
   muscleOrder.forEach(function(m) {
     var count = analysis.muscleCounts[m]||0;
     if(count === 0) return;
-    var maxForMuscle = (m==='legs')?2:(m==='cardio')?7:3;
-    var pct = Math.min(100, Math.round(count/maxForMuscle*100));
-    var badge = count<=1?'ok':count<=2?'warn':'over';
-    var badgeLabel = count<=1?'once':count<=2?count+'×':count+'× — high';
+    // Realistic weekly frequency targets:
+    // legs: optimal 2x, ok up to 3x | chest/back/shoulder: optimal 2x, ok up to 3x
+    // bicep/tricep: ok up to 4x (often hit indirectly) | cardio: ok up to 5x
+    var maxOk = (m==='legs')?2:(m==='cardio')?5:(m==='bicep'||m==='tricep')?3:2;
+    var maxHigh = (m==='legs')?3:(m==='cardio')?7:(m==='bicep'||m==='tricep')?4:3;
+    var pct = Math.min(100, Math.round(count/maxHigh*100));
+    var badge = count<=maxOk?'ok':count<=maxHigh?'warn':'over';
+    var badgeLabel = count===1?'once':count+'×'+(count>maxHigh?' — high':'');
     html += '<div class="load-row">'
       + '<span class="load-row-label">'+m.charAt(0).toUpperCase()+m.slice(1)+'</span>'
       + '<div class="load-muscle-bar"><div class="load-muscle-fill" style="width:'+pct+'%"></div></div>'
