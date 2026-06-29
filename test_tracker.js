@@ -249,6 +249,16 @@ const contentChecks = [
   ['Library editor: empty state hint', 'lib-empty-hint'],
   // Cardio sessions - exercises tab hidden
   ['Cardio: isCardio variable', 'isCardio'],
+  // Weekly load analyser
+  ['Load analyser: load-bar element', 'id="load-bar"'],
+  ['Load analyser: traffic light element', 'id="load-light"'],
+  ['Load analyser: headline element', 'id="load-headline"'],
+  ['Load analyser: detail panel', 'id="load-detail"'],
+  ['Load analyser: analyseWeek function', 'analyseWeek'],
+  ['Load analyser: renderLoadBar function', 'renderLoadBar'],
+  ['Load analyser: MUSCLE_MAP', 'MUSCLE_MAP'],
+  ['Load analyser: SESS_MUSCLES', 'SESS_MUSCLES'],
+  ['Load analyser: traffic light colours', 'load-light.green'],
   ['Cardio: cardio tab shown first', "isCardio?['cardio','notes']"],
   // Drag to reorder
   ['Drag reorder: draggable attribute on ex-group', 'draggable="true" data-gi'],
@@ -556,6 +566,53 @@ if (ctx) {
     if (!ST.run) throw new Error('session timer should be running after first set starts');
     pass('autoStartSessionTimer starts session timer on first set');
   } catch(e) { fail('autoStartSessionTimer', e.message); }
+
+  // 4.16a analyseWeek returns correct structure
+  try {
+    const wk = ctx.getWK(0);
+    const days = ctx.getWeek(wk);
+    const result = ctx.analyseWeek(days);
+    if (typeof result.totalSessions !== 'number') throw new Error('totalSessions missing');
+    if (typeof result.restDays !== 'number') throw new Error('restDays missing');
+    if (!result.light) throw new Error('traffic light missing');
+    if (!['green','amber','red'].includes(result.light)) throw new Error('invalid light: ' + result.light);
+    if (typeof result.muscleCounts !== 'object') throw new Error('muscleCounts missing');
+    if (!Array.isArray(result.warnings)) throw new Error('warnings not array');
+    pass('analyseWeek returns correct structure with traffic light and muscle counts');
+  } catch(e) { fail('analyseWeek structure', e.message); }
+
+  // 4.16b analyseWeek flags too many consecutive days
+  try {
+    // Build a 5-day consecutive training week
+    const wk2 = ctx.getWK(-1);
+    const days2 = ctx.getWeek(wk2);
+    // Add sessions to first 5 days
+    for(var di=0; di<5; di++) {
+      if(!days2[di]) days2[di] = [];
+      days2[di].push(ctx.mkSess('push'));
+    }
+    const result2 = ctx.analyseWeek(days2);
+    if (result2.maxConsecutive < 5) throw new Error('should detect 5 consecutive days, got: ' + result2.maxConsecutive);
+    if (!result2.warnings.some(function(w){ return w.indexOf('consecutive') >= 0; })) throw new Error('no consecutive days warning generated');
+    pass('analyseWeek correctly flags consecutive training days (5 days → warning)');
+  } catch(e) { fail('analyseWeek consecutive days', e.message); }
+
+  // 4.16c analyseWeek calculates total minutes from estimateTime
+  try {
+    const wk3 = ctx.getWK(-2);
+    const days3 = ctx.getWeek(wk3);
+    days3[0] = [ctx.mkSess('legs')];
+    days3[1] = [];
+    days3[2] = [];
+    days3[3] = [];
+    days3[4] = [];
+    days3[5] = [];
+    days3[6] = [];
+    const result3 = ctx.analyseWeek(days3);
+    if (result3.totalMins <= 0) throw new Error('totalMins should be > 0 for a legs session');
+    if (result3.restDays !== 6) throw new Error('should have 6 rest days, got: ' + result3.restDays);
+    pass('analyseWeek calculates totalMins and restDays correctly');
+  } catch(e) { fail('analyseWeek totalMins/restDays', e.message); }
 
   // 4.17a Cardio sessions hide exercises tab
   try {

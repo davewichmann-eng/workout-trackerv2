@@ -445,6 +445,29 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .ex-group.dragging{opacity:0.4}
 .ex-drag-handle{cursor:grab;color:var(--tx3);padding:0 6px;font-size:14px;touch-action:none;user-select:none}
 .ex-drag-handle:active{cursor:grabbing}
+
+/* Weekly load analyser */
+.load-bar{margin:0 12px 10px;border-radius:var(--r);border:0.5px solid var(--br2);background:var(--bg2);overflow:hidden}
+.load-hdr{display:flex;align-items:center;gap:10px;padding:10px 14px;cursor:pointer;user-select:none}
+.load-light{width:14px;height:14px;border-radius:50%;flex-shrink:0}
+.load-light.green{background:#22C55E}
+.load-light.amber{background:#F59E0B}
+.load-light.red{background:#EF4444}
+.load-headline{flex:1;font-size:13px;font-weight:600;color:var(--tx)}
+.load-toggle{font-size:11px;color:var(--tx3)}
+.load-detail{display:none;padding:0 14px 14px;border-top:0.5px solid var(--br)}
+.load-detail.open{display:block}
+.load-section-title{font-size:10px;font-weight:600;color:var(--tx3);text-transform:uppercase;letter-spacing:.06em;margin:10px 0 6px}
+.load-row{display:flex;align-items:center;gap:8px;margin-bottom:5px;font-size:13px}
+.load-row-label{flex:1;color:var(--tx2)}
+.load-row-val{font-weight:600;color:var(--tx)}
+.load-row-badge{font-size:11px;padding:2px 8px;border-radius:10px}
+.load-badge-ok{background:#DCFCE7;color:#166534}
+.load-badge-warn{background:#FEF9C3;color:#854D0E}
+.load-badge-over{background:#FEE2E2;color:#991B1B}
+.load-muscle-bar{flex:1;height:6px;background:var(--bg3);border-radius:3px;overflow:hidden}
+.load-muscle-fill{height:100%;border-radius:3px;background:var(--ac)}
+.load-tip{font-size:12px;color:var(--tx3);font-style:italic;margin-top:10px;padding-top:10px;border-top:0.5px solid var(--br)}
 </style>
 </head>
 <body>
@@ -488,6 +511,14 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 <div style="display:flex;align-items:center;justify-content:flex-end;padding:8px 14px 0;gap:8px">
   <button id="export-btn" style="font-size:12px;padding:5px 14px;border-radius:20px;border:0.5px solid var(--br2);background:none;cursor:pointer;color:var(--tx2)">&#8595; Export data</button>
   <label id="import-lbl" style="font-size:12px;padding:5px 14px;border-radius:20px;border:0.5px solid var(--br2);background:none;cursor:pointer;color:var(--tx2);margin:0">&#8593; Import data<input type="file" id="import-input" accept=".json" style="display:none"></label>
+</div>
+<div class="load-bar" id="load-bar">
+  <div class="load-hdr" id="load-hdr">
+    <div class="load-light" id="load-light"></div>
+    <span class="load-headline" id="load-headline">Analysing week...</span>
+    <span class="load-toggle" id="load-toggle">&#9660; details</span>
+  </div>
+  <div class="load-detail" id="load-detail"></div>
 </div>
 <div class="days-list" id="days-list"></div>
 
@@ -537,7 +568,9 @@ var SESS = {
   circuit: {label:'Circuit', dot:'dx', nm:'nx'},
   cardio:  {label:'Cardio',  dot:'dc', nm:'nc'},
   af:      {label:'Full Body', dot:'dw', nm:'nw'},
-  af_bicep: {label:'Full Body (bicep-friendly)', dot:'dw', nm:'nw'}
+  af_bicep: {label:'Full Body (bicep-friendly)', dot:'dw', nm:'nw'},
+  uppers_v1: {label:'Upper Body', dot:'dw', nm:'nw'},
+  legs_v2: {label:'Legs', dot:'dw', nm:'nw'}
 };
 var AI_HINTS = {
   pull:['Hypertrophy focus','Strength focus','Cable only','Minimal equipment'],
@@ -649,6 +682,42 @@ var AF_BICEP_PLAN = [
   {type:'normal', exs:[['Cable Tricep Pushdown', '3', '12', '', 'Pure elbow extension, keep biceps relaxed, avoid skull crushers if tender', '']]}
 ];
 
+var UPPERS_V1_PLAN = [
+  {type:'normal', exs:[['Dynamic stretching', '1', '2 min', '', 'Arm circles, chest openers, shoulder rotations', '']]},
+  {type:'normal', exs:[['Press ups', '1', '10', '', 'Light warm-up only - focus on form, chest to floor', '']]},
+  {type:'normal', exs:[['Bench press', '3', '10', '50', 'Controlled descent, full range, retract shoulder blades', '']]},
+  {type:'normal', exs:[['Overhead press', '3', '10', '30', 'Brace core, no arching, press straight overhead', '']]},
+  {type:'superset', exs:[
+    ['Single arm row', '3', '10', '45', 'Hinge at hip, elbow drives back, squeeze at top', ''],
+    ['Lateral raise', '3', '10', '10', 'Slight bend in elbow, lead with elbows, stop at shoulder height', '']
+  ]},
+  {type:'superset', exs:[
+    ['Assisted pull up', '3', '8', '', 'Full hang to chin over bar, controlled descent', ''],
+    ['Face pull', '3', '15', '', 'Pull to forehead, elbows high, squeeze rear delts', '']
+  ]},
+  {type:'superset', exs:[
+    ['Bicycle crunch', '3', '16', '', 'Slow and controlled, opposite elbow to knee, no neck pulling', ''],
+    ['Leg raise', '3', '10', '', 'Legs straight, lower slowly, small of back stays on floor', '']
+  ]}
+];
+
+var LEGS_V2_PLAN = [
+  {type:'normal', exs:[['Row machine warmup', '1', '2 min', '', 'Steady pace, easy resistance', '']]},
+  {type:'normal', exs:[['Foam roll quads', '1', '1 min/leg', '', 'Slow, pause on tight spots', '']]},
+  {type:'normal', exs:[['Foam roll IT bands', '1', '1 min/leg', '', 'Roll outer thigh hip to knee', '']]},
+  {type:'normal', exs:[['Couch stretch', '1', '1 min/leg', '', 'Hip flexors, stay tall, posterior tilt pelvis', '']]},
+  {type:'normal', exs:[['Tempo back squat', '3', '10', '55', '3s down, 1s pause at bottom, 1s up - core braced, no forward lean', 'mmb618X9Ieg']]},
+  {type:'superset', exs:[
+    ['Romanian dead lift', '3', '10', '50', 'Hinge at hip, soft knee, bar close to body, feel hamstring stretch', 'Q5vwsJFwhyg'],
+    ['Calf raise', '3', '10', '', 'Full range - all the way up, pause, all the way down', '']
+  ]},
+  {type:'normal', exs:[['Reverse lunges', '3', '10', '', 'Step back, front knee tracks over toes, stay upright', '']]},
+  {type:'normal', exs:[['Leg extensions', '3', '10', '', 'Controlled, pause at top, slow descent - no swinging', '']]},
+  {type:'normal', exs:[['Weighted sit ups', '3', '30', '', 'Plate on chest, slow on the way down, 1 min rest between sets', '']]}
+];
+
+
+
 
 
 var PLANNED = {
@@ -666,6 +735,10 @@ function mkSess(type) {
     groups = AF_PLAN.map(function(p){ return mkGrp(p.type, p.exs); });
   } else if(type === 'af_bicep') {
     groups = AF_BICEP_PLAN.map(function(p){ return mkGrp(p.type, p.exs); });
+  } else if(type === 'uppers_v1') {
+    groups = UPPERS_V1_PLAN.map(function(p){ return mkGrp(p.type, p.exs); });
+  } else if(type === 'legs_v2') {
+    groups = LEGS_V2_PLAN.map(function(p){ return mkGrp(p.type, p.exs); });
   } else {
     var pl = PLANNED[type] || [];
     groups = pl.map(function(ns){ return mkGrp(ns.length>1?'superset':'normal', ns.map(function(n){return [n];})); });
@@ -1177,6 +1250,7 @@ function renderHist(container,exName,hk){
 
 // ── Render ────────────────────────────────────────────────────────────────────
 function renderAll(){
+  renderLoadBar();
   var wk=getWK(weekOffset), dates=getWDates(weekOffset);
   document.getElementById('wk-label').textContent=fmtD(dates[0])+' - '+fmtD(dates[6]);
   var list=document.getElementById('days-list'); list.innerHTML='';
@@ -2879,6 +2953,206 @@ function renderSettings() {
 loadSessColours();
 applySessColours();
 
+
+// ── Weekly Load Analyser ──────────────────────────────────────────────────────
+
+// Muscle group mapping - which session types / exercise keywords hit which groups
+var MUSCLE_MAP = {
+  chest:    ['bench','press up','push up','chest','dip','fly'],
+  back:     ['row','pull up','pull-up','pullup','deadlift','rdl','lat','face pull'],
+  shoulder: ['overhead press','ohp','lateral raise','shoulder','face pull','press'],
+  legs:     ['squat','lunge','leg press','leg extension','calf','rdl','deadlift','hip thrust','glute'],
+  core:     ['plank','sit up','situp','crunch','leg raise','dead bug','hollow','bicycle'],
+  bicep:    ['curl','chin up','pull up','pull-up'],
+  tricep:   ['dip','tricep','pushdown','skull','press up','push up','bench'],
+  cardio:   ['cardio','run','cycle','row','swim','walk','football','cricket','bike']
+};
+
+// Session type to primary muscle groups
+var SESS_MUSCLES = {
+  pull:     ['back','bicep'],
+  push:     ['chest','tricep','shoulder'],
+  legs:     ['legs','core'],
+  upper:    ['chest','back','shoulder','bicep','tricep'],
+  circuit:  ['chest','back','legs','core'],
+  cardio:   ['cardio'],
+  af:       ['chest','back','legs','shoulder','bicep','tricep','core'],
+  af_bicep: ['chest','back','legs','shoulder','core'],
+  uppers_v1:['chest','back','shoulder','bicep','tricep','core'],
+  legs_v2:  ['legs','core']
+};
+
+function getSessionMuscles(sess) {
+  var muscles = new Set();
+  // Start from session type
+  var typeMuscles = SESS_MUSCLES[sess.type] || [];
+  typeMuscles.forEach(function(m){ muscles.add(m); });
+  // Scan exercise names for muscle groups — but EXCLUDE cardio from keyword scanning
+  // (cardio only counts when the session type IS cardio, not from warmup rows etc.)
+  var strengthMuscles = Object.keys(MUSCLE_MAP).filter(function(m){ return m !== 'cardio'; });
+  (sess.groups||[]).forEach(function(g){
+    g.exercises.forEach(function(ex){
+      var name = (ex.name||'').toLowerCase();
+      strengthMuscles.forEach(function(muscle){
+        MUSCLE_MAP[muscle].forEach(function(keyword){
+          if(name.indexOf(keyword) >= 0) muscles.add(muscle);
+        });
+      });
+    });
+  });
+  return Array.from(muscles);
+}
+
+function getSessionLoad(sess) {
+  // Return intensity score 1-3: 1=light, 2=moderate, 3=heavy
+  if(sess.type === 'cardio') return 1;
+  var totalSets = countSets(sess);
+  if(totalSets <= 6) return 1;
+  if(totalSets <= 15) return 2;
+  return 3;
+}
+
+function analyseWeek(days) {
+  var result = {
+    totalSessions: 0,
+    totalMins: 0,
+    restDays: 0,
+    muscleCounts: {},   // muscle: number of sessions hitting it
+    consecutiveHard: 0,
+    maxConsecutive: 0,
+    hardDays: 0,
+    warnings: [],
+    tips: []
+  };
+
+  // Count muscle hits across the week
+  Object.keys(MUSCLE_MAP).forEach(function(m){ result.muscleCounts[m] = 0; });
+
+  var consecutive = 0;
+  days.forEach(function(daySessions, di) {
+    if(!daySessions || daySessions.length === 0) {
+      result.restDays++;
+      if(consecutive > result.maxConsecutive) result.maxConsecutive = consecutive;
+      consecutive = 0;
+      return;
+    }
+    result.totalSessions += daySessions.length;
+    consecutive++;
+
+    var dayHard = false;
+    daySessions.forEach(function(sess) {
+      var mins = estimateTime(sess.groups||[]);
+      result.totalMins += mins;
+      var muscles = getSessionMuscles(sess);
+      muscles.forEach(function(m){ result.muscleCounts[m] = (result.muscleCounts[m]||0)+1; });
+      if(getSessionLoad(sess) >= 2) dayHard = true;
+    });
+    if(dayHard) result.hardDays++;
+  });
+  if(consecutive > result.maxConsecutive) result.maxConsecutive = consecutive;
+
+  // Generate warnings
+  if(result.restDays < 2) result.warnings.push('Less than 2 rest days — recovery is where you grow');
+  if(result.maxConsecutive >= 3) result.warnings.push(result.maxConsecutive + ' consecutive training days — risk of overreaching');
+  if(result.totalMins > 360) result.warnings.push('Over 6 hours total training — consider reducing volume');
+  if(result.totalSessions > 6) result.warnings.push(result.totalSessions + ' sessions this week — very high frequency');
+  if((result.muscleCounts.chest||0) > 3) result.warnings.push('Chest hit ' + result.muscleCounts.chest + '× — needs 48h recovery between sessions');
+  if((result.muscleCounts.legs||0) > 2) result.warnings.push('Legs hit ' + result.muscleCounts.legs + '× — heavy leg work needs 72h recovery');
+
+  // Tips
+  if(result.restDays === 0) result.tips.push('Schedule at least one full rest day — even active recovery (walk, stretch) counts');
+  if(result.maxConsecutive >= 4) result.tips.push('Try to cap consecutive training days at 3 — insert a rest or light cardio day');
+  if(!result.muscleCounts.core || result.muscleCounts.core < 2) result.tips.push('Core appears light this week — add a plank or dead bug to one session');
+  if(result.totalMins < 90 && result.totalSessions < 3) result.tips.push('Week looks light — good for deload, otherwise consider adding a session');
+
+  // Traffic light
+  if(result.warnings.length === 0) result.light = 'green';
+  else if(result.warnings.length <= 2) result.light = 'amber';
+  else result.light = 'red';
+
+  return result;
+}
+
+function renderLoadBar() {
+  var wk = getWK(weekOffset);
+  var days = getWeek(wk);
+  var analysis = analyseWeek(days);
+
+  var lightEl = document.getElementById('load-light');
+  var headlineEl = document.getElementById('load-headline');
+  var detailEl = document.getElementById('load-detail');
+  if(!lightEl||!headlineEl||!detailEl) return;
+
+  // Set traffic light
+  lightEl.className = 'load-light ' + analysis.light;
+
+  // Headline
+  var headlines = {
+    green: 'Week looks well balanced',
+    amber: 'Week is manageable — a few things to watch',
+    red: 'Week looks too heavy — consider adjusting'
+  };
+  headlineEl.textContent = headlines[analysis.light]
+    + ' · ' + analysis.totalSessions + ' sessions'
+    + ' · ~' + Math.round(analysis.totalMins/60*10)/10 + 'h'
+    + ' · ' + analysis.restDays + ' rest day' + (analysis.restDays!==1?'s':'');
+
+  // Detail panel
+  var html = '';
+
+  // Session overview
+  html += '<div class="load-section-title">This week</div>';
+  html += '<div class="load-row"><span class="load-row-label">Total sessions</span><span class="load-row-val">'+analysis.totalSessions+'</span></div>';
+  html += '<div class="load-row"><span class="load-row-label">Estimated training time</span><span class="load-row-val">~'+Math.round(analysis.totalMins)+' min</span></div>';
+  html += '<div class="load-row"><span class="load-row-label">Rest days</span><span class="load-row-val">'+analysis.restDays+'/7 '+(analysis.restDays>=2?'✓':'⚠')+'</span></div>';
+  html += '<div class="load-row"><span class="load-row-label">Max consecutive days</span><span class="load-row-val">'+analysis.maxConsecutive+' '+(analysis.maxConsecutive<=2?'✓':analysis.maxConsecutive<=3?'~':'⚠')+'</span></div>';
+
+  // Muscle group frequency
+  html += '<div class="load-section-title">Muscle group frequency</div>';
+  var muscleOrder = ['chest','back','shoulder','legs','core','bicep','tricep','cardio'];
+  muscleOrder.forEach(function(m) {
+    var count = analysis.muscleCounts[m]||0;
+    if(count === 0) return;
+    var maxForMuscle = (m==='legs')?2:(m==='cardio')?7:3;
+    var pct = Math.min(100, Math.round(count/maxForMuscle*100));
+    var badge = count<=1?'ok':count<=2?'warn':'over';
+    var badgeLabel = count<=1?'once':count<=2?count+'×':count+'× — high';
+    html += '<div class="load-row">'
+      + '<span class="load-row-label">'+m.charAt(0).toUpperCase()+m.slice(1)+'</span>'
+      + '<div class="load-muscle-bar"><div class="load-muscle-fill" style="width:'+pct+'%"></div></div>'
+      + '<span class="load-row-badge load-badge-'+badge+'">'+badgeLabel+'</span>'
+      + '</div>';
+  });
+
+  // Warnings
+  if(analysis.warnings.length > 0) {
+    html += '<div class="load-section-title">Warnings</div>';
+    analysis.warnings.forEach(function(w){
+      html += '<div class="load-row"><span style="color:var(--dc);margin-right:6px">⚠</span><span class="load-row-label">'+w+'</span></div>';
+    });
+  }
+
+  // Tips
+  if(analysis.tips.length > 0) {
+    html += '<div class="load-tip">';
+    analysis.tips.forEach(function(t){ html += '💡 '+t+'<br>'; });
+    html += '</div>';
+  }
+
+  detailEl.innerHTML = html;
+
+  // Wire toggle
+  var hdr = document.getElementById('load-hdr');
+  var tog = document.getElementById('load-toggle');
+  if(hdr) {
+    hdr.onclick = function() {
+      var open = detailEl.classList.toggle('open');
+      if(tog) tog.innerHTML = open ? '&#9650; details' : '&#9660; details';
+    };
+  }
+}
+
+
 // Ensure AF - Full Body is always in library
 (function(){
   var hasAF = library.some(function(item){ return item.name === 'AF - Full Body'; });
@@ -2889,6 +3163,16 @@ applySessColours();
   var hasAFBicep = library.some(function(item){ return item.name === 'AF - Full Body (bicep-friendly)'; });
   if(!hasAFBicep) {
     library.push({ name:'AF - Full Body (bicep-friendly)', type:'af_bicep', groups: AF_BICEP_PLAN.map(function(p){ return mkGrp(p.type, p.exs); }), notes:'Modified for distal biceps tendon - avoids heavy elbow flexion/extension under load', prs:[] });
+    saveLib();
+  }
+  var hasUppers = library.some(function(item){ return item.name === 'Uppers v1'; });
+  if(!hasUppers) {
+    library.push({ name:'Uppers v1', type:'uppers_v1', groups: UPPERS_V1_PLAN.map(function(p){ return mkGrp(p.type, p.exs); }), notes:'Full upper body session ~50-55 mins. Dynamic stretch + press up warmup, bench, OHP, row/lateral raise superset, pull up/face pull superset, core finisher.', prs:[] });
+    saveLib();
+  }
+  var hasLegsV2 = library.some(function(item){ return item.name === 'Legs v2'; });
+  if(!hasLegsV2) {
+    library.push({ name:'Legs v2', type:'legs_v2', groups: LEGS_V2_PLAN.map(function(p){ return mkGrp(p.type, p.exs); }), notes:'Legs session ~50 mins. Row warmup, mobility, tempo squat, RDL/calf raise superset, reverse lunges, leg extensions, weighted sit-ups finisher.', prs:[] });
     saveLib();
   }
 })();
