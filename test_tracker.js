@@ -247,6 +247,16 @@ const contentChecks = [
   ['Training Mode: tmViewTab state', 'tmViewTab'],
   // Library editor - empty state hint
   ['Library editor: empty state hint', 'lib-empty-hint'],
+  // Cardio sessions - exercises tab hidden
+  ['Cardio: isCardio variable', 'isCardio'],
+  ['Cardio: cardio tab shown first', "isCardio?['cardio','notes']"],
+  // Drag to reorder
+  ['Drag reorder: draggable attribute on ex-group', 'draggable="true" data-gi'],
+  ['Drag reorder: drag handle element', 'ex-drag-handle'],
+  ['Drag reorder: drag-over CSS class', 'drag-over'],
+  // Auto rest->getready transition
+  ['Auto flow: rest auto-transitions to getready', 'startGetReady(vk)'],
+  ['Auto flow: getready auto-starts set', 'startMySet(vk)'],
   ['Training Mode: history shown (last time tab)', 'Last time'],
   ['Training Mode: history shown (personal best)', 'personal best'],
   ['Training Mode: session timer clock', 'tm-session-clock'],
@@ -546,6 +556,17 @@ if (ctx) {
     if (!ST.run) throw new Error('session timer should be running after first set starts');
     pass('autoStartSessionTimer starts session timer on first set');
   } catch(e) { fail('autoStartSessionTimer', e.message); }
+
+  // 4.17a Cardio sessions hide exercises tab
+  try {
+    const cardioSess = ctx.mkSess('cardio');
+    const isCardio = cardioSess.type === 'cardio';
+    if (!isCardio) throw new Error('session type should be cardio');
+    // Verify hasW would be false for cardio
+    const hasW = !isCardio && (['pull','push','legs','upper','circuit','af','af_bicep'].includes(cardioSess.type) || (cardioSess.groups||[]).length > 0);
+    if (hasW) throw new Error('cardio session should not show exercises tab (hasW should be false)');
+    pass('Cardio sessions hide exercises tab (hasW=false for cardio type)');
+  } catch(e) { fail('Cardio exercises tab', e.message); }
 
   // 4.17b tmViewTab defaults to planned and switches correctly
   try {

@@ -439,6 +439,12 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .tm-plan-row-x{font-size:11px;color:var(--tx3)}
 .tm-plan-row-static{color:var(--tx2);flex:1}
 .tm-plan-empty{font-size:13px;color:var(--tx3);text-align:center;padding:10px 0}
+
+.ex-group{position:relative}
+.ex-group.drag-over{outline:2px solid var(--ac);border-radius:var(--r)}
+.ex-group.dragging{opacity:0.4}
+.ex-drag-handle{cursor:grab;color:var(--tx3);padding:0 6px;font-size:14px;touch-action:none;user-select:none}
+.ex-drag-handle:active{cursor:grabbing}
 </style>
 </head>
 <body>
@@ -1232,9 +1238,10 @@ function buildChip(sess,di,wk){
 
   if(isOpen){
     var body=document.createElement('div'); body.className='chip-body open';
-    var hasW=['pull','push','legs','upper','circuit','af'].includes(sess.type)||((sess.groups||[]).length>0);
-    var tabs=['exercises','cardio','prs','notes'];
-    var at=tabs.includes(tab)?tab:'exercises'; sessTabs[sess.id]=at;
+    var isCardio=(sess.type==='cardio');
+var hasW=!isCardio&&(['pull','push','legs','upper','circuit','af','af_bicep'].includes(sess.type)||((sess.groups||[]).length>0));
+    var tabs=isCardio?['cardio','notes']:['exercises','cardio','prs','notes'];
+    var at=tabs.includes(tab)?tab:(isCardio?'cardio':'exercises'); sessTabs[sess.id]=at;
 
     // Session timer bar
     var barHTML='<div class="sess-bar" id="sb-'+sess.id+'">'
@@ -1256,7 +1263,7 @@ function buildChip(sess,di,wk){
       if(hasW&&sess.groups.length>0){
         sess.groups.forEach(function(g,gi){
           var isS=g.type==='superset', isD=g.type==='dropset';
-          contentHTML+='<div class="ex-group"><div class="ex-ghdr"><span class="gbadge '+(isS?'gb-s':isD?'gb-d':'gb-n')+'">'+(isS?'Superset':isD?'Drop set':'Single')+'</span><button class="cycle-btn" data-sid="'+sess.id+'" data-gi="'+gi+'">cycle</button><button class="del-grp" data-sid="'+sess.id+'" data-gi="'+gi+'">x</button></div>';
+          contentHTML+='<div class="ex-group" draggable="true" data-gi="'+ gi +'"><div class="ex-ghdr"><span class="ex-drag-handle">&#8801;</span><span class="gbadge '+(isS?'gb-s':isD?'gb-d':'gb-n')+'">'+(isS?'Superset':isD?'Drop set':'Single')+'</span><button class="cycle-btn" data-sid="'+sess.id+'" data-gi="'+gi+'">cycle</button><button class="del-grp" data-sid="'+sess.id+'" data-gi="'+gi+'">x</button></div>';
           contentHTML+='<div class="ex-chdr"><span style="flex:1">exercise</span><span style="width:44px;text-align:center">sets</span><span style="width:44px;text-align:center">reps</span><span style="width:44px;text-align:center">kg</span><span style="width:20px"></span></div>';
           g.exercises.forEach(function(ex,ei){
             var vk=sess.id+'-'+gi+'-'+ei, vid=ytId(ex.ytUrl);
@@ -1406,6 +1413,39 @@ function buildChip(sess,di,wk){
 
       if(T.run) T.iv=setInterval(upd,500);
     })();
+
+
+    // ── Drag to reorder exercise groups ──
+    var dragSrcGi = null;
+    body.querySelectorAll('.ex-group[draggable]').forEach(function(grpEl) {
+      grpEl.addEventListener('dragstart', function(e) {
+        dragSrcGi = parseInt(grpEl.dataset.gi);
+        grpEl.classList.add('dragging');
+        e.dataTransfer.effectAllowed = 'move';
+        e.dataTransfer.setData('text/plain', 'exgrp:' + dragSrcGi);
+      });
+      grpEl.addEventListener('dragend', function() {
+        grpEl.classList.remove('dragging');
+        body.querySelectorAll('.ex-group').forEach(function(el){ el.classList.remove('drag-over'); });
+      });
+      grpEl.addEventListener('dragover', function(e) {
+        e.preventDefault();
+        e.dataTransfer.dropEffect = 'move';
+        body.querySelectorAll('.ex-group').forEach(function(el){ el.classList.remove('drag-over'); });
+        grpEl.classList.add('drag-over');
+      });
+      grpEl.addEventListener('drop', function(e) {
+        e.preventDefault();
+        var targetGi = parseInt(grpEl.dataset.gi);
+        if(dragSrcGi === null || dragSrcGi === targetGi) return;
+        var s = findSess(sess.id, wk);
+        if(!s) return;
+        var moved = s.groups.splice(dragSrcGi, 1)[0];
+        s.groups.splice(targetGi, 0, moved);
+        save();
+        renderAll();
+      });
+    });
 
     // Bind tabs
     body.querySelectorAll('.stab').forEach(function(b){b.addEventListener('click',function(){sessTabs[b.dataset.sid]=b.dataset.tab;renderAll();});});
@@ -2553,14 +2593,27 @@ function tmTickRest(vk) {
   T.restIv = setInterval(function(){
     T.restRemain = r0 - (Date.now()-t0)/1000;
     var arc=document.getElementById('tm-arc'), rt=document.getElementById('tm-rtime');
-    if(!arc||!rt) return;
+    if(!arc||!rt) {
+      // Elements gone (user navigated away) - stop the interval
+      clearInterval(T.restIv); return;
+    }
     var frac=Math.max(0,Math.min(1,T.restRemain/T.restTarget));
     arc.style.strokeDashoffset = TM_RING_C*(1-frac);
-    var over=T.restRemain<=0, urgent=T.restRemain<=10&&!over;
-    arc.className='tm-ring-fill'+(over?' over':urgent?' urgent':'');
-    var d=over?0:Math.ceil(T.restRemain);
-    rt.textContent=over?'Go!':pad2(d/60)+':'+pad2(d%60);
-    if(rt.nextElementSibling) rt.nextElementSibling.textContent=over?'':'remaining';
+    var urgent=T.restRemain<=10&&T.restRemain>0;
+    arc.className='tm-ring-fill'+(urgent?' urgent':'');
+    var d=Math.max(0,Math.ceil(T.restRemain));
+    rt.textContent=pad2(d/60)+':'+pad2(d%60);
+    if(rt.nextElementSibling) rt.nextElementSibling.textContent='remaining';
+    // Auto-transition to getready when rest hits 0
+    if(T.restRemain <= 0) {
+      clearInterval(T.restIv);
+      if(T.setsDone < T.totalSets) {
+        startGetReady(vk);
+        renderTM();
+      } else {
+        T.state='idle'; renderTM();
+      }
+    }
   }, 200);
 }
 
