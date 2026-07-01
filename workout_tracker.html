@@ -6,7 +6,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="Workout Tracker">
-<title>Workout Tracker</title>
+<title>DW Workout</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 <style>
 :root{--ac:#1D9E75;--al:#E1F5EE;--ad:#085041;--bg:#fff;--bg2:#f5f5f3;--bg3:#ededeb;--tx:#1a1a18;--tx2:#5f5e5a;--tx3:#888780;--br:rgba(0,0,0,0.12);--br2:rgba(0,0,0,0.22);--r:8px;--rl:12px;--dc:#A32D2D;--dbg:#FCEBEB}
@@ -468,6 +468,40 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .load-muscle-bar{flex:1;height:6px;background:var(--bg3);border-radius:3px;overflow:hidden}
 .load-muscle-fill{height:100%;border-radius:3px;background:var(--ac)}
 .load-tip{font-size:12px;color:var(--tx3);font-style:italic;margin-top:10px;padding-top:10px;border-top:0.5px solid var(--br)}
+
+/* PB notification flash */
+.pb-flash{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%) scale(0.8);
+  background:linear-gradient(135deg,#F59E0B,#EF4444);color:#fff;
+  font-size:22px;font-weight:800;padding:18px 32px;border-radius:16px;
+  box-shadow:0 8px 32px rgba(0,0,0,.3);z-index:2000;pointer-events:none;
+  opacity:0;transition:opacity .2s,transform .2s}
+.pb-flash.show{opacity:1;transform:translate(-50%,-50%) scale(1)}
+
+/* Progressive overload suggestion */
+.overload-hint{font-size:12px;color:#3B82F6;background:#EFF6FF;border:0.5px solid #BFDBFE;
+  border-radius:6px;padding:5px 10px;margin-bottom:6px;text-align:center}
+
+/* Body weight + streak bar */
+.bw-streak-bar{display:flex;gap:8px;margin:0 12px 8px;flex-wrap:wrap}
+.bw-card{flex:1;min-width:120px;background:var(--bg2);border:0.5px solid var(--br2);
+  border-radius:var(--r);padding:10px 12px}
+.bw-card-label{font-size:10px;font-weight:600;color:var(--tx3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px}
+.bw-card-val{font-size:20px;font-weight:700;color:var(--tx)}
+.bw-card-sub{font-size:11px;color:var(--tx3);margin-top:2px}
+.bw-input-row{display:flex;align-items:center;gap:6px;margin-top:6px}
+.bw-inp{width:70px;font-size:14px;text-align:center;border:0.5px solid var(--br2);
+  border-radius:6px;padding:4px 6px;background:var(--bg);color:var(--tx);font-family:inherit}
+.bw-save-btn{font-size:12px;padding:4px 10px;border-radius:20px;border:0.5px solid var(--ac);
+  background:none;color:var(--ac);cursor:pointer}
+.streak-fire{font-size:18px}
+.deload-tip{margin:0 12px 8px;background:#FEF3C7;border:0.5px solid #FDE68A;
+  border-radius:var(--r);padding:8px 12px;font-size:12px;color:#92400E}
+
+.app-logo{display:flex;align-items:center;gap:8px;text-decoration:none}
+.app-logo-circle{width:32px;height:32px;flex-shrink:0}
+.app-logo-text{display:flex;flex-direction:column;line-height:1.1}
+.app-logo-name{font-size:15px;font-weight:500;color:var(--tx);letter-spacing:-0.2px}
+.app-logo-sub{font-size:10px;color:var(--tx3);letter-spacing:0.04em;text-transform:uppercase}
 </style>
 </head>
 <body>
@@ -483,7 +517,21 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 
 <div class="hdr">
   <div class="hdr-row">
-    <span class="app-title">Workout Tracker</span>
+    <div class="app-logo">
+      <svg class="app-logo-circle" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
+        <circle cx="16" cy="16" r="16" fill="#1D9E75"/>
+        <polyline points="2,16 6,16 8,10 10,22 12,14 14,18 17,16 30,16"
+          fill="none" stroke="rgba(255,255,255,0.3)" stroke-width="1.5"
+          stroke-linecap="round" stroke-linejoin="round"/>
+        <text x="16" y="21" text-anchor="middle"
+          font-family="system-ui,sans-serif" font-size="11" font-weight="500"
+          fill="#ffffff" letter-spacing="-0.5">DW</text>
+      </svg>
+      <div class="app-logo-text">
+        <span class="app-logo-name">DW Workout</span>
+        <span class="app-logo-sub">Tracker</span>
+      </div>
+    </div>
     <div class="wk-nav">
       <button id="prev-wk">&#8249;</button>
       <span class="wk-lbl" id="wk-label"></span>
@@ -520,6 +568,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
   </div>
   <div class="load-detail" id="load-detail"></div>
 </div>
+<div class="bw-streak-bar" id="bw-streak-bar"></div>
+<div id="deload-tip-bar"></div>
 <div class="days-list" id="days-list"></div>
 
 <div class="tm-overlay" id="tm-overlay">
@@ -557,6 +607,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
   </div>
   <div class="settings-body" id="settings-body"></div>
 </div>
+
+<div class="pb-flash" id="pb-flash">🏆 New PB!</div>
 
 <script>
 var DAYS = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
@@ -1067,6 +1119,129 @@ function doneMySet(vk) {
   renderTracker(vk);
 }
 // Persist a completed set's actual reps/kg onto the exercise object (survives reload)
+
+
+
+function getWarmupSets(workingKg) {
+  var w = parseFloat(workingKg);
+  if(!w || w < 20) return null;
+  return [
+    {pct:50, kg:Math.round(w*0.5/2.5)*2.5, reps:5},
+    {pct:65, kg:Math.round(w*0.65/2.5)*2.5, reps:3},
+    {pct:80, kg:Math.round(w*0.8/2.5)*2.5, reps:2},
+    {pct:90, kg:Math.round(w*0.9/2.5)*2.5, reps:1}
+  ];
+}
+
+
+var EXERCISE_ALTERNATIVES = {
+  'bench press':       ['Dumbbell press','Machine chest press','Push up','Cable fly','Incline press'],
+  'overhead press':    ['Dumbbell shoulder press','Machine shoulder press','Arnold press','Cable press'],
+  'single arm row':    ['Cable row','Seated row','Dumbbell row','Machine row','TRX row'],
+  'assisted pull up':  ['Lat pulldown','Cable pull down','Resistance band pull up','TRX row'],
+  'tempo back squat':  ['Goblet squat','Leg press','Bulgarian split squat','Hack squat','Dumbbell squat'],
+  'romanian dead lift':['Dumbbell RDL','Cable pull through','Good morning','Nordic curl','Leg curl'],
+  'reverse lunge':     ['Forward lunge','Step up','Split squat','Bulgarian split squat'],
+  'leg extensions':    ['Sissy squat','Leg press','Wall sit','Dumbbell step up'],
+  'bicycle crunch':    ['Russian twist','Woodchop','Cable crunch','Ab wheel'],
+  'leg raise':         ['Hanging knee raise','Dead bug','Hollow hold','V-sit'],
+  'face pull':         ['Band pull apart','Rear delt fly','Cable external rotation','Y raise'],
+  'lateral raise':     ['Cable lateral raise','Machine lateral raise','Upright row'],
+  'calf raise':        ['Seated calf raise','Leg press calf raise','Step calf raise']
+};
+
+function getSwapSuggestions(exName) {
+  if(!exName) return null;
+  var key = exName.toLowerCase().trim();
+  // Try direct match first
+  if(EXERCISE_ALTERNATIVES[key]) return EXERCISE_ALTERNATIVES[key];
+  // Try partial match
+  var matched = Object.keys(EXERCISE_ALTERNATIVES).find(function(k){
+    return key.indexOf(k) >= 0 || k.indexOf(key) >= 0;
+  });
+  return matched ? EXERCISE_ALTERNATIVES[matched] : null;
+}
+
+
+function shareWorkout(sess) {
+  var lines = [];
+  var def = SESS[sess.type]||{label:'Workout'};
+  lines.push((sess.libName||def.label).toUpperCase());
+  lines.push('');
+  (sess.groups||[]).forEach(function(g, gi) {
+    var isS = g.type==='superset', isD = g.type==='dropset';
+    if(isS || isD) lines.push('[' + (isS?'Superset':'Drop set') + ']');
+    g.exercises.forEach(function(ex) {
+      var parts = [];
+      if(ex.sets) parts.push(ex.sets + ' sets');
+      if(ex.reps) parts.push(ex.reps + ' reps');
+      if(ex.weight) parts.push(ex.weight + 'kg');
+      lines.push('  ' + (ex.name||'Exercise') + (parts.length?' — '+parts.join(', '):''));
+      if(ex.notes) lines.push('    ('+ex.notes+')');
+    });
+    lines.push('');
+  });
+  var est = estimateTime(sess.groups||[]);
+  if(est) lines.push('Estimated time: ~' + est + ' min');
+  lines.push('');
+  lines.push('Tracked with Workout Tracker');
+  var text = lines.join('\n');
+  if(navigator.share) {
+    navigator.share({ title: sess.libName||def.label, text: text })
+      .catch(function(){});
+  } else {
+    // Fallback: copy to clipboard
+    try {
+      navigator.clipboard.writeText(text).then(function(){
+        setDataStatus('Copied to clipboard');
+      });
+    } catch(e) { setDataStatus('Share not supported on this device'); }
+  }
+}
+
+function getOverloadSuggestion(ex) {
+  // Returns a suggestion string if the user should increase weight, else null
+  if(!ex.name || !ex.weight || !ex.sets || !ex.reps) return null;
+  var hist = getAllHist(ex.name);
+  if(hist.length < 1) return null;
+
+  // Get the most recent session's actualLog entries
+  var lastSessionDate = hist[hist.length-1].date;
+  var lastSets = hist.filter(function(h){ return h.date === lastSessionDate; });
+  if(!lastSets.length) return null;
+
+  var plannedSets = parseInt(ex.sets)||3;
+  var plannedReps = parseInt(ex.reps)||0;
+  var currentWeight = parseFloat(ex.weight)||0;
+
+  // Check: did they complete all planned sets at or above target reps last time?
+  if(lastSets.length < plannedSets) return null; // didn't complete all sets
+  var allHitTarget = lastSets.every(function(s){
+    return parseInt(s.reps) >= plannedReps;
+  });
+  if(!allHitTarget) return null;
+
+  // Suggest increase
+  var increment = currentWeight >= 40 ? 2.5 : 1.25;
+  var suggested = currentWeight + increment;
+  return '💪 Hit all sets last time — try ' + suggested + 'kg today';
+}
+
+function showPBFlash(exName, kg) {
+  var el = document.getElementById('pb-flash');
+  if(!el) return;
+  el.textContent = '🏆 New PB! ' + kg + 'kg';
+  el.classList.add('show');
+  setTimeout(function(){ el.classList.remove('show'); }, 2500);
+}
+
+function checkPB(exName, kg) {
+  if(!exName || !kg) return false;
+  var hist = getAllHist(exName);
+  var prevBest = hist.length ? Math.max.apply(null, hist.map(function(h){ return parseFloat(h.weight)||0; })) : 0;
+  return parseFloat(kg) > prevBest;
+}
+
 function persistSetLog(vk, T) {
   var parts = vk.split('-');
   var ei = parseInt(parts[parts.length-1]), gi = parseInt(parts[parts.length-2]);
@@ -1088,6 +1263,9 @@ function persistSetLog(vk, T) {
     reps: lastEntry.reps,
     kg: lastEntry.kg
   });
+  if(lastEntry.kg && checkPB(ex.name, lastEntry.kg)) {
+    showPBFlash(ex.name, lastEntry.kg);
+  }
   save();
 }
 
@@ -1287,6 +1465,7 @@ function renderHist(container,exName,hk){
 // ── Render ────────────────────────────────────────────────────────────────────
 function renderAll(){
   renderLoadBar();
+  renderBWStreak();
   var wk=getWK(weekOffset), dates=getWDates(weekOffset);
   document.getElementById('wk-label').textContent=fmtD(dates[0])+' - '+fmtD(dates[6]);
   var list=document.getElementById('days-list'); list.innerHTML='';
@@ -1340,6 +1519,8 @@ function buildChip(sess,di,wk){
 
   hdr.querySelector('.chip-del').addEventListener('click',function(e){e.stopPropagation();getWeek(wk)[di]=getWeek(wk)[di].filter(function(s){return s.id!==sess.id;});delete openSess[sess.id];save();renderAll();});
   hdr.querySelector('.lib-star').addEventListener('click',function(e){e.stopPropagation();saveToLib(sess,wk);});
+  var shareChipBtn = hdr.querySelector('.share-chip-btn');
+  if(shareChipBtn) shareChipBtn.addEventListener('click',function(e){e.stopPropagation();shareWorkout(sess);});
   hdr.addEventListener('click',function(e){if(e.target.classList.contains('chip-del')||e.target.classList.contains('chip-drag')||e.target.classList.contains('lib-star'))return;openSess[sess.id]=!openSess[sess.id];renderAll();});
 
   chip.draggable=true;
@@ -2185,11 +2366,13 @@ function showJumpPicker() {
     var ex = g.exercises[it.ei];
     var T = setTrackers[it.vk];
     var done = T && T.totalSets>0 && T.setsDone>=T.totalSets;
+    var swaps = getSwapSuggestions(ex.name);
     var statusHtml = done ? '<span class="tm-jump-status done">done</span>' : '<span class="tm-jump-status pending">'+(T?T.setsDone:0)+'/'+(parseInt(ex.sets)||3)+'</span>';
+    var swapHtml = swaps ? '<span class="tm-jump-status pending" style="cursor:pointer" data-swap-idx="'+i+'" title="'+swaps.slice(0,3).join(', ')+'">swap</span>' : '';
     html += '<div class="tm-jump-item'+(i===tmState.idx?' current':'')+'" data-idx="'+i+'">'
       + '<span class="tm-jump-num">'+(i+1)+'</span>'
       + '<span class="tm-jump-name">'+(ex.name||'(unnamed exercise)')+'</span>'
-      + statusHtml
+      + statusHtml + swapHtml
       + '</div>';
   });
   html += '<button class="tm-add-ex-btn" id="tm-add-ex">+ add exercise to workout</button>';
@@ -2199,6 +2382,26 @@ function showJumpPicker() {
 
   overlay.querySelector('#tm-jump-close').addEventListener('click', function(){
     overlay.classList.remove('open');
+  });
+  // Swap suggestions
+  overlay.querySelectorAll('[data-swap-idx]').forEach(function(swapBtn){
+    swapBtn.addEventListener('click', function(e){
+      e.stopPropagation();
+      var i = parseInt(swapBtn.dataset.swapIdx);
+      var it = tmState.flat[i];
+      var ex2 = sess.groups[it.gi].exercises[it.ei];
+      var swaps2 = getSwapSuggestions(ex2.name);
+      if(!swaps2) return;
+      var chosen = prompt('Alternatives for "'+ex2.name+'":\n'+swaps2.map(function(s,si){return (si+1)+'. '+s;}).join('\n')+'\n\nEnter number to swap (or cancel):');
+      if(!chosen) return;
+      var idx2 = parseInt(chosen)-1;
+      if(idx2>=0 && idx2<swaps2.length) {
+        ex2.name = swaps2[idx2];
+        save();
+        overlay.classList.remove('open');
+        renderTM();
+      }
+    });
   });
   overlay.querySelectorAll('.tm-jump-item').forEach(function(item){
     item.addEventListener('click', function(){
@@ -2410,6 +2613,21 @@ function renderTM() {
   // PR badge (kept compact, separate from the tabbed view)
   if(pr) {
     html += '<div class="tm-history"><div class="tm-hist-box"><div class="tm-hist-val">'+pr.weight+'kg</div><div class="tm-hist-lbl">personal best</div></div></div>';
+  }
+
+  // Progressive overload suggestion
+  var overloadHint = getOverloadSuggestion(ex);
+  if(overloadHint) html += '<div class="overload-hint">'+overloadHint+'</div>';
+
+  // Warm-up weight calculator
+  if(ex.weight && parseFloat(ex.weight) >= 20) {
+    var warmups = getWarmupSets(ex.weight);
+    if(warmups) {
+      html += '<div class="overload-hint" style="background:#F0FDF4;border-color:#BBF7D0;color:#166534">'
+        + '🔥 Warm-up: '
+        + warmups.map(function(s){ return s.kg+'kg×'+s.reps; }).join(' → ')
+        + '</div>';
+    }
   }
 
   // Planned / Last time tabbed view (only shown before all sets are done -
@@ -3007,6 +3225,113 @@ function renderSettings() {
 loadSessColours();
 applySessColours();
 
+
+
+// ── Body Weight Tracking ──────────────────────────────────────────────────────
+function getBWLog() {
+  try { return JSON.parse(localStorage.getItem('wt_bw')||'[]'); } catch(e){ return []; }
+}
+function saveBWLog(log) {
+  try { localStorage.setItem('wt_bw', JSON.stringify(log)); } catch(e){}
+}
+function logBodyWeight(kg) {
+  var log = getBWLog();
+  var today = new Date().toISOString().slice(0,10);
+  // Update today's entry or add new
+  var idx = log.findIndex(function(e){ return e.date === today; });
+  if(idx >= 0) log[idx].kg = kg; else log.push({date:today, kg:kg});
+  saveBWLog(log);
+}
+function getLatestBW() {
+  var log = getBWLog();
+  return log.length ? log[log.length-1] : null;
+}
+function getBWTrend() {
+  var log = getBWLog();
+  if(log.length < 2) return null;
+  var last = log[log.length-1].kg, prev = log[log.length-2].kg;
+  return parseFloat((last-prev).toFixed(1));
+}
+
+// ── Streak Tracking ───────────────────────────────────────────────────────────
+function getTrainingStreak() {
+  // Count consecutive weeks where at least one session was completed
+  var weeks = Object.keys(weekData).sort().reverse();
+  var streak = 0;
+  for(var i=0; i<weeks.length; i++) {
+    var days = weekData[weeks[i]]||[];
+    var hasCompleted = days.some(function(day){
+      return day.some(function(s){ return s.completed; });
+    });
+    if(hasCompleted) streak++;
+    else if(i > 0) break; // gap in streak (skip current week check)
+  }
+  return streak;
+}
+
+// ── Deload Detection ──────────────────────────────────────────────────────────
+function needsDeload() {
+  // Suggest deload after 4+ consecutive hard weeks
+  var weeks = Object.keys(weekData).sort().reverse();
+  if(weeks.length < 4) return false;
+  var hardWeeks = 0;
+  for(var i=1; i<=Math.min(4,weeks.length); i++) { // skip current week
+    var days = weekData[weeks[i]]||[];
+    var totalSessions = days.reduce(function(n,d){ return n+d.length; },0);
+    if(totalSessions >= 4) hardWeeks++;
+  }
+  return hardWeeks >= 4;
+}
+
+function renderBWStreak() {
+  var bar = document.getElementById('bw-streak-bar');
+  var deloadBar = document.getElementById('deload-tip-bar');
+  if(!bar) return;
+
+  var bw = getLatestBW();
+  var trend = getBWTrend();
+  var streak = getTrainingStreak();
+  var trendStr = trend !== null ? (trend > 0 ? '+'+trend : trend)+'kg this week' : 'log daily for trend';
+
+  bar.innerHTML =
+    // Body weight card
+    '<div class="bw-card">'
+      +'<div class="bw-card-label">Body weight</div>'
+      +'<div class="bw-card-val">'+(bw?bw.kg+'kg':'—')+'</div>'
+      +'<div class="bw-card-sub">'+trendStr+'</div>'
+      +'<div class="bw-input-row">'
+        +'<input type="number" class="bw-inp" id="bw-inp" step="0.1" placeholder="kg" value="'+(bw?bw.kg:'')+'">'
+        +'<button class="bw-save-btn" id="bw-save">Log</button>'
+      +'</div>'
+    +'</div>'
+    // Streak card
+    +'<div class="bw-card">'
+      +'<div class="bw-card-label">Training streak</div>'
+      +'<div class="bw-card-val"><span class="streak-fire">🔥</span> '+streak+'</div>'
+      +'<div class="bw-card-sub">week'+(streak!==1?'s':'')+' in a row</div>'
+    +'</div>';
+
+  // Deload suggestion
+  if(deloadBar) {
+    if(needsDeload()) {
+      deloadBar.innerHTML = '<div class="deload-tip">💤 <strong>Deload week suggested</strong> — you have had 4+ hard weeks in a row. Consider reducing volume by 40-50% this week to allow full recovery before pushing again.</div>';
+    } else {
+      deloadBar.innerHTML = '';
+    }
+  }
+
+  // Wire body weight log button
+  var bwSave = document.getElementById('bw-save');
+  var bwInp = document.getElementById('bw-inp');
+  if(bwSave && bwInp) {
+    bwSave.addEventListener('click', function(){
+      var val = parseFloat(bwInp.value);
+      if(isNaN(val) || val < 20 || val > 300) return;
+      logBodyWeight(val);
+      renderBWStreak();
+    });
+  }
+}
 
 // ── Weekly Load Analyser ──────────────────────────────────────────────────────
 

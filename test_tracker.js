@@ -260,6 +260,24 @@ const contentChecks = [
   ['Load analyser: SESS_MUSCLES', 'SESS_MUSCLES'],
   ['Load analyser: traffic light colours', 'load-light.green'],
   ['Cardio: cardio tab shown first', "isCardio?['cardio','notes']"],
+  // New features
+  ['PB: showPBFlash function', 'showPBFlash'],
+  ['PB: checkPB function', 'checkPB'],
+  ['PB: flash element', 'pb-flash'],
+  ['Overload: getOverloadSuggestion function', 'getOverloadSuggestion'],
+  ['Overload: hint CSS class', 'overload-hint'],
+  ['Warmup: getWarmupSets function', 'getWarmupSets'],
+  ['Swap: getSwapSuggestions function', 'getSwapSuggestions'],
+  ['Swap: EXERCISE_ALTERNATIVES', 'EXERCISE_ALTERNATIVES'],
+  ['Share: shareWorkout function', 'shareWorkout'],
+  ['Share: share button on chip', 'share-chip-btn'],
+  ['BW: logBodyWeight function', 'logBodyWeight'],
+  ['BW: getBWLog function', 'getBWLog'],
+  ['BW: bw-streak-bar element', 'bw-streak-bar'],
+  ['BW: bw-inp element', 'bw-inp'],
+  ['Streak: getTrainingStreak function', 'getTrainingStreak'],
+  ['Deload: needsDeload function', 'needsDeload'],
+  ['Deload: deload-tip CSS', 'deload-tip'],
   // Drag to reorder
   ['Drag reorder: draggable attribute on ex-group', 'draggable="true" data-gi'],
   ['Drag reorder: drag handle element', 'ex-drag-handle'],
@@ -644,6 +662,60 @@ if (ctx) {
     // Check the handler is registered (we can verify it exists in the JS source)
     pass('beforeunload navigation warning registered (verified in source)');
   } catch(e) { fail('beforeunload warning', e.message); }
+
+  // 4.14a checkPB correctly identifies new personal bests
+  try {
+    if (typeof ctx.checkPB !== 'function') throw new Error('checkPB not a function');
+    // No history - any weight is a PB
+    const isPB = ctx.checkPB('Brand New Exercise', '50');
+    if (!isPB) throw new Error('First ever set should always be a PB');
+    pass('checkPB: first-ever set correctly identified as PB');
+  } catch(e) { fail('checkPB', e.message); }
+
+  // 4.14b getWarmupSets generates correct warm-up progression
+  try {
+    if (typeof ctx.getWarmupSets !== 'function') throw new Error('getWarmupSets not a function');
+    const sets = ctx.getWarmupSets(100);
+    if (!sets || sets.length !== 4) throw new Error('expected 4 warm-up sets, got ' + (sets?sets.length:'null'));
+    if (sets[0].pct !== 50) throw new Error('first set should be 50%, got ' + sets[0].pct);
+    if (sets[0].kg !== 50) throw new Error('50% of 100kg should be 50kg, got ' + sets[0].kg);
+    if (sets[3].pct !== 90) throw new Error('last set should be 90%');
+    pass('getWarmupSets: 4 sets at 50/65/80/90% of working weight');
+  } catch(e) { fail('getWarmupSets', e.message); }
+
+  // 4.14c getSwapSuggestions returns alternatives
+  try {
+    if (typeof ctx.getSwapSuggestions !== 'function') throw new Error('getSwapSuggestions not a function');
+    const swaps = ctx.getSwapSuggestions('bench press');
+    if (!swaps || !Array.isArray(swaps)) throw new Error('expected array of alternatives');
+    if (swaps.length === 0) throw new Error('bench press should have alternatives');
+    pass('getSwapSuggestions: returns alternatives for known exercises (' + swaps.length + ' for bench press)');
+  } catch(e) { fail('getSwapSuggestions', e.message); }
+
+  // 4.14d getTrainingStreak and needsDeload exist and return valid types
+  try {
+    if (typeof ctx.getTrainingStreak !== 'function') throw new Error('getTrainingStreak not a function');
+    if (typeof ctx.needsDeload !== 'function') throw new Error('needsDeload not a function');
+    const streak = ctx.getTrainingStreak();
+    if (typeof streak !== 'number') throw new Error('streak should be a number');
+    const deload = ctx.needsDeload();
+    if (typeof deload !== 'boolean') throw new Error('needsDeload should return boolean');
+    pass('getTrainingStreak and needsDeload return correct types (streak=' + streak + ', deload=' + deload + ')');
+  } catch(e) { fail('streak/deload', e.message); }
+
+  // 4.14e logBodyWeight and getBWLog work correctly
+  try {
+    if (typeof ctx.logBodyWeight !== 'function') throw new Error('logBodyWeight not a function');
+    if (typeof ctx.getBWLog !== 'function') throw new Error('getBWLog not a function');
+    ctx.logBodyWeight(82.5);
+    const log = ctx.getBWLog();
+    if (!Array.isArray(log)) throw new Error('getBWLog should return array');
+    const today = new Date().toISOString().slice(0,10);
+    const entry = log.find(function(e){ return e.date === today; });
+    if (!entry) throw new Error('today entry not found in BW log');
+    if (entry.kg !== 82.5) throw new Error('weight should be 82.5, got ' + entry.kg);
+    pass('logBodyWeight persists correctly, getBWLog retrieves today entry (82.5kg)');
+  } catch(e) { fail('body weight tracking', e.message); }
 
   // 4.16a analyseWeek returns correct structure
   try {
