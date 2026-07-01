@@ -570,7 +570,8 @@ var SESS = {
   af:      {label:'Full Body', dot:'dw', nm:'nw'},
   af_bicep: {label:'Full Body (bicep-friendly)', dot:'dw', nm:'nw'},
   uppers_v1: {label:'Upper Body', dot:'dw', nm:'nw'},
-  legs_v2: {label:'Legs', dot:'dw', nm:'nw'}
+  legs_v2: {label:'Legs', dot:'dw', nm:'nw'},
+  full_body_v1: {label:'Full Body', dot:'dw', nm:'nw'}
 };
 var AI_HINTS = {
   pull:['Hypertrophy focus','Strength focus','Cable only','Minimal equipment'],
@@ -716,6 +717,25 @@ var LEGS_V2_PLAN = [
   {type:'normal', exs:[['Weighted sit ups', '3', '30', '', 'Plate on chest, slow on the way down, 1 min rest between sets', '']]}
 ];
 
+var FULL_BODY_V1_PLAN = [
+  {type:'normal', exs:[['Dynamic stretching', '1', '2 min', '', 'Arm circles, hip circles, leg swings, chest openers', '']]},
+  {type:'normal', exs:[['Press ups', '1', '10', '', 'Light warm-up — focus on form, full range', '']]},
+  {type:'normal', exs:[['Tempo back squat', '3', '8', '50', '3s down 1s pause 1s up — slightly lighter than legs day, same focus on form', 'mmb618X9Ieg']]},
+  {type:'superset', exs:[
+    ['Bench press', '3', '8', '50', 'Controlled descent, retract shoulder blades, full range', ''],
+    ['Romanian dead lift', '3', '8', '50', 'Hinge at hip, soft knee, bar close to body — upper/lower pairing, minimal rest needed', 'Q5vwsJFwhyg']
+  ]},
+  {type:'superset', exs:[
+    ['Overhead press', '3', '10', '30', 'Brace core, no arching, press straight overhead', ''],
+    ['Single arm row', '3', '10', '45', 'Hinge at hip, elbow drives back, squeeze at top — push/pull pairing', '']
+  ]},
+  {type:'superset', exs:[
+    ['Assisted pull up', '3', '8', '', 'Full hang to chin over bar, controlled descent', ''],
+    ['Reverse lunge', '3', '10', '', 'Step back, front knee tracks over toes, stay upright — legs get a second hit', '']
+  ]}
+];
+
+
 
 
 
@@ -739,6 +759,8 @@ function mkSess(type) {
     groups = UPPERS_V1_PLAN.map(function(p){ return mkGrp(p.type, p.exs); });
   } else if(type === 'legs_v2') {
     groups = LEGS_V2_PLAN.map(function(p){ return mkGrp(p.type, p.exs); });
+  } else if(type === 'full_body_v1') {
+    groups = FULL_BODY_V1_PLAN.map(function(p){ return mkGrp(p.type, p.exs); });
   } else {
     var pl = PLANNED[type] || [];
     groups = pl.map(function(ns){ return mkGrp(ns.length>1?'superset':'normal', ns.map(function(n){return [n];})); });
@@ -1003,25 +1025,39 @@ function doneMySet(vk) {
 
   // Superset: if there are more exercises in the group, flow straight to next
   if(T.supersetPeers && T.supersetPeers.length>1){
-    var nextIdx=(T.supersetIdx+1)%T.supersetPeers.length;
-    var isLastInRound=(nextIdx===0);
+    var peers = T.supersetPeers;
+    var currentIdx = peers.indexOf(vk);
+    var nextIdx = (currentIdx+1) % peers.length;
+    var isLastInRound = (nextIdx === 0);
+
     if(!isLastInRound){
-      // Move to next exercise in superset without rest
-      T.state='idle'; // reset this tracker back to idle
-      var nextVk=T.supersetPeers[nextIdx];
-      var TNext=setTrackers[nextVk];
+      // Flow to next exercise in round — no rest
+      T.state='idle';
+      var nextVk = peers[nextIdx];
+      var TNext = setTrackers[nextVk];
       if(TNext){
-        TNext.supersetIdx=nextIdx;
-        TNext.state='active'; TNext.setTimer=0;
-        renderTracker(vk);   // update this one back to idle
-        renderTracker(nextVk); // kick off next exercise
+        TNext.supersetIdx = nextIdx;
+        TNext.state = 'active'; TNext.setTimer = 0;
+        renderTracker(vk);
+        renderTracker(nextVk);
         return;
       }
     } else {
-      // Completed full round of superset — go to rest on lead tracker
-      T.supersetIdx=0;
-      T.state='resting'; T.restRemain=T.restTarget;
-      renderTracker(vk);
+      // Completed full round — rest on the LEAD tracker (peers[0])
+      // so that after rest, the next set starts on exercise 1
+      var leadVk = peers[0];
+      var TLead = setTrackers[leadVk];
+      T.state = 'idle'; // reset last exercise back to idle
+      if(TLead && leadVk !== vk) {
+        // Rest on lead
+        TLead.state = 'resting'; TLead.restRemain = TLead.restTarget;
+        renderTracker(vk);
+        renderTracker(leadVk);
+      } else {
+        // vk IS the lead — rest on self
+        T.state = 'resting'; T.restRemain = T.restTarget;
+        renderTracker(vk);
+      }
       return;
     }
   }
@@ -2647,14 +2683,23 @@ function renderTMTracker(vk, ex) {
 }
 
 function syncTMAfterSet(vk) {
-  var T = setTrackers[vk];
-  // If this exercise is part of a superset and flow moved to a peer, jump TM there
-  if(T.supersetPeers && T.supersetPeers.length>1 && T.state==='idle') {
-    var nextVk = T.supersetPeers.find(function(pv){ return setTrackers[pv] && setTrackers[pv].state==='active'; });
-    if(nextVk) {
-      var idx = tmState.flat.findIndex(function(it){return it.vk===nextVk;});
-      if(idx>=0) tmState.idx = idx;
-    }
+  if(!tmState) return;
+  // Look for whichever tracker just became active (next in superset)
+  // or which lead tracker is now resting
+  var activeVk = null, restingLeadVk = null;
+  tmState.flat.forEach(function(it){
+    var Ti = setTrackers[it.vk];
+    if(!Ti) return;
+    if(Ti.state === 'active') activeVk = it.vk;
+    // Lead tracker resting means round just finished, next round starts on lead
+    if(Ti.state === 'resting' && Ti.supersetPeers && Ti.supersetPeers[0] === it.vk) restingLeadVk = it.vk;
+  });
+  if(activeVk) {
+    var idx = tmState.flat.findIndex(function(it){return it.vk===activeVk;});
+    if(idx>=0) tmState.idx = idx;
+  } else if(restingLeadVk) {
+    var idx2 = tmState.flat.findIndex(function(it){return it.vk===restingLeadVk;});
+    if(idx2>=0) tmState.idx = idx2;
   }
   renderTM();
 }
@@ -2719,6 +2764,15 @@ if(tmJumpBtn) tmJumpBtn.addEventListener('click', showJumpPicker);
 // Re-acquire wake lock if page becomes visible again
 document.addEventListener('visibilitychange', function(){
   if(document.visibilityState==='visible' && tmState) requestWakeLock();
+});
+
+// Warn before navigating away during an active workout
+window.addEventListener('beforeunload', function(e){
+  if(tmState) {
+    e.preventDefault();
+    e.returnValue = 'You have an active workout in progress. Are you sure you want to leave?';
+    return e.returnValue;
+  }
 });
 
 
@@ -3179,6 +3233,11 @@ function renderLoadBar() {
   var hasLegsV2 = library.some(function(item){ return item.name === 'Legs v2'; });
   if(!hasLegsV2) {
     library.push({ name:'Legs v2', type:'legs_v2', groups: LEGS_V2_PLAN.map(function(p){ return mkGrp(p.type, p.exs); }), notes:'Legs session ~50 mins. Row warmup, mobility, tempo squat, RDL/calf raise superset, reverse lunges, leg extensions, weighted sit-ups finisher.', prs:[] });
+    saveLib();
+  }
+  var hasFullBody = library.some(function(item){ return item.name === 'Full Body v1'; });
+  if(!hasFullBody) {
+    library.push({ name:'Full Body v1', type:'full_body_v1', groups: FULL_BODY_V1_PLAN.map(function(p){ return mkGrp(p.type, p.exs); }), notes:'Combined full body ~58 mins. Draws from Legs v2 and Uppers v1 — squat at 50kg, bench+RDL superset, OHP+row superset, pull up+lunge superset.', prs:[] });
     saveLib();
   }
 })();
