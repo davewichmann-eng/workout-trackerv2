@@ -251,6 +251,16 @@ const contentChecks = [
   ['Cardio: isCardio variable', 'isCardio'],
   // Weekly load analyser
   ['Load analyser: load-bar element', 'id="load-bar"'],
+  // Workout state persistence
+  ['Persistence: saveActiveWorkout function', 'saveActiveWorkout'],
+  ['Persistence: clearActiveWorkout function', 'clearActiveWorkout'],
+  ['Persistence: loadActiveWorkout function', 'loadActiveWorkout'],
+  ['Persistence: resumeActiveWorkout function', 'resumeActiveWorkout'],
+  ['Persistence: renderResumeBanner function', 'renderResumeBanner'],
+  ['Persistence: resume banner HTML', 'resume-banner-wrap'],
+  ['Persistence: wt_active localStorage key', 'wt_active'],
+  ['Persistence: 6 hour expiry', '6 * 60 * 60 * 1000'],
+  ['Persistence: clearActiveWorkout on exit', 'clearActiveWorkout'],
   ['Load analyser: traffic light element', 'id="load-light"'],
   ['Load analyser: headline element', 'id="load-headline"'],
   ['Load analyser: detail panel', 'id="load-detail"'],
@@ -662,6 +672,54 @@ if (ctx) {
     // Check the handler is registered (we can verify it exists in the JS source)
     pass('beforeunload navigation warning registered (verified in source)');
   } catch(e) { fail('beforeunload warning', e.message); }
+
+  // 4.13a saveActiveWorkout serialises state correctly
+  try {
+    if (typeof ctx.saveActiveWorkout !== 'function') throw new Error('saveActiveWorkout missing');
+    if (typeof ctx.clearActiveWorkout !== 'function') throw new Error('clearActiveWorkout missing');
+    if (typeof ctx.loadActiveWorkout !== 'function') throw new Error('loadActiveWorkout missing');
+    if (typeof ctx.resumeActiveWorkout !== 'function') throw new Error('resumeActiveWorkout missing');
+
+    // Set up a fake active workout
+    const sess = ctx.mkSess('legs');
+    const wk = ctx.getWK(0);
+    ctx.getWeek(wk)[0].push(sess);
+    const flat = ctx.buildFlatList(sess);
+    ctx.tmState = { sessId: sess.id, wk: wk, flat: flat, idx: 2 };
+    const vk = flat[0].vk;
+    ctx.getTracker(vk, 3);
+    ctx.setTrackers[vk].setsDone = 2;
+    ctx.setTrackers[vk].setLog = [{setNum:1,reps:'8',kg:'40'},{setNum:2,reps:'8',kg:'40'}];
+    ctx.sessTimers[sess.id] = { run: false, start: 0, elapsed: 450000, ended: false };
+
+    ctx.saveActiveWorkout();
+    const snap = ctx.loadActiveWorkout();
+    if(!snap) throw new Error('loadActiveWorkout returned null after save');
+    if(snap.tmState.sessId !== sess.id) throw new Error('sessId mismatch');
+    if(snap.tmState.idx !== 2) throw new Error('idx should be 2, got ' + snap.tmState.idx);
+    if(!snap.trackers[vk]) throw new Error('tracker not saved');
+    if(snap.trackers[vk].setsDone !== 2) throw new Error('setsDone should be 2');
+    if(snap.timer.elapsed !== 450000) throw new Error('timer elapsed not saved correctly');
+    pass('saveActiveWorkout/loadActiveWorkout: state serialises and restores correctly');
+  } catch(e) { fail('workout persistence', e.message); }
+
+  // 4.13b clearActiveWorkout removes saved state
+  try {
+    ctx.clearActiveWorkout();
+    const snap2 = ctx.loadActiveWorkout();
+    if(snap2 !== null) throw new Error('loadActiveWorkout should return null after clear');
+    pass('clearActiveWorkout removes saved state from localStorage');
+  } catch(e) { fail('clearActiveWorkout', e.message); }
+
+  // 4.13c loadActiveWorkout expires after 6 hours
+  try {
+    // Save with an old timestamp
+    const oldSnap = { savedAt: Date.now() - 7 * 60 * 60 * 1000, tmState: {}, trackers: {}, timer: null };
+    ctx.localStorage.setItem('wt_active', JSON.stringify(oldSnap));
+    const expired = ctx.loadActiveWorkout();
+    if(expired !== null) throw new Error('expired snap should return null');
+    pass('loadActiveWorkout correctly expires state older than 6 hours');
+  } catch(e) { fail('workout persistence expiry', e.message); }
 
   // 4.14a checkPB correctly identifies new personal bests
   try {

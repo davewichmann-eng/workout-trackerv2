@@ -502,6 +502,19 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .app-logo-text{display:flex;flex-direction:column;line-height:1.1}
 .app-logo-name{font-size:15px;font-weight:500;color:var(--tx);letter-spacing:-0.2px}
 .app-logo-sub{font-size:10px;color:var(--tx3);letter-spacing:0.04em;text-transform:uppercase}
+
+/* Resume workout banner */
+.resume-banner{margin:0 12px 10px;border-radius:var(--r);background:linear-gradient(135deg,#1D9E75,#15785A);
+  padding:12px 14px;display:flex;align-items:center;gap:10px;cursor:pointer}
+.resume-banner:active{opacity:0.85}
+.resume-icon{font-size:22px;flex-shrink:0}
+.resume-text{flex:1}
+.resume-title{font-size:14px;font-weight:600;color:#fff}
+.resume-sub{font-size:12px;color:rgba(255,255,255,0.75);margin-top:1px}
+.resume-btn{font-size:12px;font-weight:600;padding:6px 14px;border-radius:20px;
+  background:rgba(255,255,255,0.2);border:none;color:#fff;cursor:pointer;white-space:nowrap}
+.resume-dismiss{font-size:18px;color:rgba(255,255,255,0.6);background:none;border:none;
+  cursor:pointer;padding:0 4px;line-height:1}
 </style>
 </head>
 <body>
@@ -560,6 +573,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
   <button id="export-btn" style="font-size:12px;padding:5px 14px;border-radius:20px;border:0.5px solid var(--br2);background:none;cursor:pointer;color:var(--tx2)">&#8595; Export data</button>
   <label id="import-lbl" style="font-size:12px;padding:5px 14px;border-radius:20px;border:0.5px solid var(--br2);background:none;cursor:pointer;color:var(--tx2);margin:0">&#8593; Import data<input type="file" id="import-input" accept=".json" style="display:none"></label>
 </div>
+<div id="resume-banner-wrap"></div>
 <div class="load-bar" id="load-bar">
   <div class="load-hdr" id="load-hdr">
     <div class="load-light" id="load-light"></div>
@@ -1267,6 +1281,7 @@ function persistSetLog(vk, T) {
     showPBFlash(ex.name, lastEntry.kg);
   }
   save();
+  saveActiveWorkout();
 }
 
 // Auto-start the session timer when the first set of the session begins
@@ -1466,6 +1481,7 @@ function renderHist(container,exName,hk){
 function renderAll(){
   renderLoadBar();
   renderBWStreak();
+  renderResumeBanner();
   var wk=getWK(weekOffset), dates=getWDates(weekOffset);
   document.getElementById('wk-label').textContent=fmtD(dates[0])+' - '+fmtD(dates[6]);
   var list=document.getElementById('days-list'); list.innerHTML='';
@@ -2425,6 +2441,7 @@ function showJumpPicker() {
 }
 
 function exitTraining() {
+  clearActiveWorkout();
   document.getElementById('tm-overlay').classList.remove('open');
   releaseWakeLock();
   tmState = null;
@@ -2741,6 +2758,7 @@ function renderTM() {
 
   renderTMTracker(vk, ex);
   tmSessionTimer();
+  saveActiveWorkout();
 }
 
 
@@ -3332,6 +3350,155 @@ function renderBWStreak() {
     });
   }
 }
+
+
+// ── Workout State Persistence ─────────────────────────────────────────────────
+var WK_ACTIVE_KEY = 'wt_active';
+
+function saveActiveWorkout() {
+  if(!tmState) return;
+  try {
+    // Serialise setTrackers — omit interval IDs (not serialisable)
+    var trackerSnap = {};
+    Object.keys(setTrackers).forEach(function(vk) {
+      var T = setTrackers[vk];
+      trackerSnap[vk] = {
+        state: T.state === 'active' ? 'idle' : T.state, // don't resume mid-set
+        setsDone: T.setsDone,
+        totalSets: T.totalSets,
+        restTarget: T.restTarget,
+        restRemain: T.restRemain,
+        setLog: T.setLog||[],
+        curReps: T.curReps||'',
+        curKg: T.curKg||'',
+        supersetPeers: T.supersetPeers||null,
+        supersetIdx: T.supersetIdx||0
+      };
+    });
+    // Serialise session timer
+    var timerSnap = null;
+    var ST = sessTimers[tmState.sessId];
+    if(ST) {
+      timerSnap = {
+        elapsed: ST.run ? ST.elapsed + (Date.now() - ST.start) : ST.elapsed,
+        ended: ST.ended||false
+      };
+    }
+    var snap = {
+      savedAt: Date.now(),
+      tmState: {
+        sessId: tmState.sessId,
+        wk: tmState.wk,
+        flat: tmState.flat,
+        idx: tmState.idx
+      },
+      trackers: trackerSnap,
+      timer: timerSnap,
+      viewTab: tmViewTab
+    };
+    localStorage.setItem(WK_ACTIVE_KEY, JSON.stringify(snap));
+  } catch(e) { console.error('Failed to save active workout:', e); }
+}
+
+function clearActiveWorkout() {
+  try { localStorage.removeItem(WK_ACTIVE_KEY); } catch(e) {}
+}
+
+function loadActiveWorkout() {
+  try {
+    var raw = localStorage.getItem(WK_ACTIVE_KEY);
+    if(!raw) return null;
+    var snap = JSON.parse(raw);
+    // Only restore if saved within the last 6 hours
+    if(!snap.savedAt || Date.now() - snap.savedAt > 6 * 60 * 60 * 1000) {
+      clearActiveWorkout(); return null;
+    }
+    return snap;
+  } catch(e) { return null; }
+}
+
+function resumeActiveWorkout(snap) {
+  // Restore set trackers
+  Object.keys(snap.trackers).forEach(function(vk) {
+    setTrackers[vk] = snap.trackers[vk];
+    setTrackers[vk].setIv = null;
+    setTrackers[vk].restIv = null;
+    setTrackers[vk].readyIv = null;
+  });
+  // Restore session timer
+  if(snap.timer) {
+    sessTimers[snap.tmState.sessId] = {
+      run: false,
+      start: 0,
+      elapsed: snap.timer.elapsed||0,
+      iv: null, tmIv: null,
+      ended: snap.timer.ended||false
+    };
+  }
+  // Restore view tabs
+  tmViewTab = snap.viewTab || {};
+  // Restore tmState and open Training Mode
+  tmState = snap.tmState;
+  document.getElementById('tm-overlay').classList.add('open');
+  requestWakeLock();
+  renderTM();
+  // Restart session timer display if not ended
+  var ST = sessTimers[tmState.sessId];
+  if(ST && !ST.ended) tmSessionTimer();
+}
+
+function renderResumeBanner() {
+  var wrap = document.getElementById('resume-banner-wrap');
+  if(!wrap) return;
+  var snap = loadActiveWorkout();
+  if(!snap) { wrap.innerHTML = ''; return; }
+
+  // Find session name
+  var sess = findSess(snap.tmState.sessId, snap.tmState.wk);
+  var sessName = sess ? (sess.libName || (SESS[sess.type]||{label:'Workout'}).label) : 'Workout';
+
+  // Calculate progress
+  var total = snap.tmState.flat.length, done = 0;
+  snap.tmState.flat.forEach(function(it) {
+    var T = snap.trackers[it.vk];
+    if(T && T.totalSets > 0 && T.setsDone >= T.totalSets) done++;
+  });
+
+  // Format elapsed time
+  var elapsed = snap.timer ? snap.timer.elapsed : 0;
+  var elapsedStr = fmtHMS(elapsed).slice(0, 5); // HH:MM
+
+  // Time since interrupted
+  var agoMins = Math.round((Date.now() - snap.savedAt) / 60000);
+  var agoStr = agoMins < 2 ? 'just now' : agoMins < 60 ? agoMins + ' min ago' : Math.round(agoMins/60) + 'h ago';
+
+  wrap.innerHTML = '<div class="resume-banner" id="resume-banner">'
+    + '<span class="resume-icon">▶</span>'
+    + '<div class="resume-text">'
+      + '<div class="resume-title">Resume ' + sessName + '</div>'
+      + '<div class="resume-sub">' + done + '/' + total + ' exercises done · ' + elapsedStr + ' elapsed · interrupted ' + agoStr + '</div>'
+    + '</div>'
+    + '<button class="resume-btn" id="resume-btn">Resume</button>'
+    + '<button class="resume-dismiss" id="resume-dismiss" title="Discard">&#10005;</button>'
+    + '</div>';
+
+  document.getElementById('resume-btn').addEventListener('click', function() {
+    resumeActiveWorkout(snap);
+    wrap.innerHTML = '';
+  });
+  document.getElementById('resume-dismiss').addEventListener('click', function(e) {
+    e.stopPropagation();
+    clearActiveWorkout();
+    wrap.innerHTML = '';
+  });
+  // Tapping the banner itself also resumes
+  document.getElementById('resume-banner').addEventListener('click', function(e) {
+    if(e.target.id === 'resume-dismiss') return;
+    resumeActiveWorkout(snap);
+    wrap.innerHTML = '';
+  });
+}
+
 
 // ── Weekly Load Analyser ──────────────────────────────────────────────────────
 
