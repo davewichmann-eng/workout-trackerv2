@@ -260,6 +260,40 @@ const contentChecks = [
   ['Persistence: resume banner HTML', 'resume-banner-wrap'],
   ['Persistence: wt_active localStorage key', 'wt_active'],
   ['Persistence: 6 hour expiry', '6 * 60 * 60 * 1000'],
+  // Week templates
+  ['Templates: tmpl-section element', 'id="tmpl-section"'],
+  ['Templates: tmpl-body element', 'id="tmpl-body"'],
+  ['Templates: loadTemplates function', 'loadTemplates'],
+  ['Templates: saveTemplates function', 'saveTemplates'],
+  ['Templates: renderTemplates function', 'renderTemplates'],
+  ['Templates: applyTemplate function', 'applyTemplate'],
+  ['Templates: injectDefaultTemplate function', 'injectDefaultTemplate'],
+  ['Templates: wt_templates localStorage key', 'wt_templates'],
+  ['Templates: PT programme default template', 'PT Programme Week'],
+  // PT sessions in library
+  ['PT sessions: PT_S1_PLAN defined', 'PT_S1_PLAN'],
+  ['PT sessions: PT_S2_PLAN defined', 'PT_S2_PLAN'],
+  ['PT sessions: PT_S3_PLAN defined', 'PT_S3_PLAN'],
+  ['PT sessions: PT_S4_PLAN defined', 'PT_S4_PLAN'],
+  ['PT sessions: hamstring smash in S1', 'Hamstring smash'],
+  ['PT sessions: tib raise in S1', 'Tib raise'],
+  ['PT sessions: assisted pull-up in S2', 'Assisted pull-up'],
+  ['PT sessions: SL leg press in S4', 'Single leg leg press'],
+  ['PT sessions: tib raise in S4', 'Tib raise'],
+  ['PT sessions: core circuit in S2', 'Cable woodchop'],
+  ['PT sessions: core circuit in S2', 'Dead bug'],
+  ['PT sessions: SL extension in S3', 'Single leg extension'],
+  ['PT sessions: SL hamstring curl in S3', 'Single leg hamstring curl'],
+  // Sport sessions
+  ['Sports: 5-a-side Football library entry', '5-a-side Football'],
+  ['Sports: Cricket Nets library entry', 'Cricket Nets'],
+  // Week template days
+  ['Template: football on Monday', "5-a-side Football',          // Mon"],
+  ['Template: cricket on Wednesday', "Cricket Nets',               // Wed"],
+  ['Template: PT Lower A on Tuesday', "PT — Lower A',          // Tue"],
+  ['Template: PT Upper on Thursday', "PT — Upper Push/Pull',  // Thu"],
+  ['Template: PT Lower B on Friday', "PT — Lower B',          // Fri"],
+  ['Template: Full Body on Saturday', "PT — Full Body (Weekend)"],
   ['Persistence: clearActiveWorkout on exit', 'clearActiveWorkout'],
   ['Load analyser: traffic light element', 'id="load-light"'],
   ['Load analyser: headline element', 'id="load-headline"'],
@@ -672,6 +706,118 @@ if (ctx) {
     // Check the handler is registered (we can verify it exists in the JS source)
     pass('beforeunload navigation warning registered (verified in source)');
   } catch(e) { fail('beforeunload warning', e.message); }
+
+  // 4.11a PT sessions build correctly via mkSess
+  try {
+    const types = ['pt_s1','pt_s2','pt_s3','pt_s4'];
+    types.forEach(function(type) {
+      const sess = ctx.mkSess(type);
+      if (!sess) throw new Error(type + ' returned null');
+      if (!Array.isArray(sess.groups)) throw new Error(type + ' groups not array');
+      if (sess.groups.length === 0) throw new Error(type + ' has no groups');
+    });
+    // Check S1 specifics
+    const s1 = ctx.mkSess('pt_s1');
+    const names = s1.groups.map(function(g){ return g.exercises[0].name; });
+    if (!names.includes('Hamstring smash')) throw new Error('S1 missing hamstring smash');
+    if (!names.includes('Tempo back squat')) throw new Error('S1 missing tempo squat');
+    if (!names.includes('Single leg RDL')) throw new Error('S1 missing SL RDL');
+    // Check S2 has supersets
+    const s2 = ctx.mkSess('pt_s2');
+    const hasSuperset = s2.groups.some(function(g){ return g.type === 'superset'; });
+    if (!hasSuperset) throw new Error('S2 should have superset groups');
+    const s2Names = s2.groups.reduce(function(acc,g){ return acc.concat(g.exercises.map(function(e){return e.name;})); },[]);
+    if (!s2Names.includes('Bench press')) throw new Error('S2 missing bench press');
+    if (!s2Names.includes('Assisted pull-up')) throw new Error('S2 missing assisted pull-up');
+    // Check S4 has tib raise superset
+    const s4 = ctx.mkSess('pt_s4');
+    const s4Names = s4.groups.reduce(function(acc,g){ return acc.concat(g.exercises.map(function(e){return e.name;})); },[]);
+    if (!s4Names.includes('Single leg leg press')) throw new Error('S4 missing SL leg press');
+    if (!s4Names.includes('Tib raise')) throw new Error('S4 missing tib raise');
+    pass('All 4 PT sessions build correctly with expected exercises');
+  } catch(e) { fail('PT sessions build', e.message); }
+
+  // 4.11b Sport sessions injected into library
+  try {
+    // Simulate the injection
+    const sports = ['5-a-side Football','Cricket Nets'];
+    sports.forEach(function(name) {
+      var has = ctx.library.some(function(l){ return l.name === name; });
+      if(!has) {
+        ctx.library.push({name:name, type:'cardio', groups:[], notes:'', prs:[]});
+      }
+    });
+    const hasFootball = ctx.library.some(function(l){ return l.name === '5-a-side Football'; });
+    const hasCricket = ctx.library.some(function(l){ return l.name === 'Cricket Nets'; });
+    if (!hasFootball) throw new Error('5-a-side Football not in library');
+    if (!hasCricket) throw new Error('Cricket Nets not in library');
+    const football = ctx.library.find(function(l){ return l.name === '5-a-side Football'; });
+    if (football.type !== 'cardio') throw new Error('Football should be cardio type');
+    pass('Sport sessions (football, cricket) present in library as cardio type');
+  } catch(e) { fail('sport library entries', e.message); }
+
+  // 4.11c Default template has correct 7-day structure with sports
+  try {
+    ctx.loadTemplates();
+    const def = ctx.weekTemplates[0];
+    if (!def) throw new Error('No default template');
+    if (def.days[0] !== '5-a-side Football') throw new Error('Monday should be football, got: ' + def.days[0]);
+    if (def.days[1] !== 'PT — Lower A') throw new Error('Tuesday should be PT Lower A, got: ' + def.days[1]);
+    if (def.days[2] !== 'Cricket Nets') throw new Error('Wednesday should be cricket, got: ' + def.days[2]);
+    if (def.days[3] !== 'PT — Upper Push/Pull') throw new Error('Thursday should be Upper, got: ' + def.days[3]);
+    if (def.days[4] !== 'PT — Lower B') throw new Error('Friday should be Lower B, got: ' + def.days[4]);
+    if (def.days[5] !== 'PT — Full Body (Weekend)') throw new Error('Saturday should be Full Body, got: ' + def.days[5]);
+    if (def.days[6] !== null) throw new Error('Sunday should be rest (null), got: ' + def.days[6]);
+    pass('Default template: Mon=Football, Tue=Lower A, Wed=Cricket, Thu=Upper, Fri=Lower B, Sat=Full Body, Sun=Rest');
+  } catch(e) { fail('default template structure', e.message); }
+
+  // 4.12a Week templates: loadTemplates injects default
+  try {
+    if (typeof ctx.loadTemplates !== 'function') throw new Error('loadTemplates missing');
+    if (typeof ctx.applyTemplate !== 'function') throw new Error('applyTemplate missing');
+    if (typeof ctx.renderTemplates !== 'function') throw new Error('renderTemplates missing');
+    ctx.loadTemplates();
+    if (!Array.isArray(ctx.weekTemplates)) throw new Error('weekTemplates should be array');
+    if (ctx.weekTemplates.length === 0) throw new Error('default template should be injected');
+    const def = ctx.weekTemplates[0];
+    if (!def.name) throw new Error('template should have a name');
+    if (!Array.isArray(def.days) || def.days.length !== 7) throw new Error('template should have 7 days');
+    pass('loadTemplates injects default PT Programme Week template with 7 days');
+  } catch(e) { fail('week templates load', e.message); }
+
+  // 4.12b applyTemplate populates empty days correctly
+  try {
+    ctx.loadTemplates();
+    const wk = ctx.getWK(0);
+    const days = ctx.getWeek(wk);
+    // Clear all days first
+    for(var i=0;i<7;i++) days[i]=[];
+    // Inject PT Lower A into library if not present
+    var hasS1 = ctx.library.some(function(l){ return l.name==='PT — Lower A'; });
+    if(!hasS1) {
+      ctx.library.push({name:'PT — Lower A',type:'pt_s1',groups:ctx.PT_S1_PLAN.map(function(p){return ctx.mkGrp(p.type,p.exs);}),notes:'',prs:[]});
+    }
+    // Apply template with only Monday filled
+    var testTmpl = { name:'Test', days:['PT — Lower A',null,null,null,null,null,null] };
+    var applied = ctx.applyTemplate(testTmpl, wk);
+    if (applied !== 1) throw new Error('should apply 1 session, got ' + applied);
+    if (!days[0] || days[0].length !== 1) throw new Error('Monday should have 1 session');
+    if (days[0][0].libName !== 'PT — Lower A') throw new Error('session libName wrong: ' + days[0][0].libName);
+    pass('applyTemplate correctly populates Monday with PT Lower A session');
+  } catch(e) { fail('applyTemplate', e.message); }
+
+  // 4.12c applyTemplate does not overwrite existing sessions
+  try {
+    const wk2 = ctx.getWK(-1);
+    const days2 = ctx.getWeek(wk2);
+    const existing = ctx.mkSess('pull');
+    days2[0] = [existing]; // Monday already has a session
+    var testTmpl2 = { name:'Test2', days:['PT — Lower A',null,null,null,null,null,null] };
+    var applied2 = ctx.applyTemplate(testTmpl2, wk2);
+    if (applied2 !== 0) throw new Error('should not overwrite existing session, got applied=' + applied2);
+    if (days2[0].length !== 1) throw new Error('Monday should still have only 1 session');
+    pass('applyTemplate does not overwrite existing sessions on occupied days');
+  } catch(e) { fail('applyTemplate non-destructive', e.message); }
 
   // 4.13a saveActiveWorkout serialises state correctly
   try {

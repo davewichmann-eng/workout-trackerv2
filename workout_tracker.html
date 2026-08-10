@@ -515,6 +515,34 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
   background:rgba(255,255,255,0.2);border:none;color:#fff;cursor:pointer;white-space:nowrap}
 .resume-dismiss{font-size:18px;color:rgba(255,255,255,0.6);background:none;border:none;
   cursor:pointer;padding:0 4px;line-height:1}
+
+/* Week Templates */
+.tmpl-section{margin:0 12px 12px;border-radius:var(--r);border:0.5px solid var(--br2);background:var(--bg2);overflow:hidden}
+.tmpl-hdr{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;cursor:pointer;user-select:none}
+.tmpl-title{font-size:13px;font-weight:600;color:var(--tx)}
+.tmpl-chev{font-size:11px;color:var(--tx3);transition:transform .2s}
+.tmpl-chev.open{transform:rotate(180deg)}
+.tmpl-body{display:none;padding:10px 14px 14px;border-top:0.5px solid var(--br)}
+.tmpl-body.open{display:block}
+.tmpl-list{display:flex;flex-direction:column;gap:8px;margin-bottom:12px}
+.tmpl-card{border:0.5px solid var(--br2);border-radius:var(--r);background:var(--bg);padding:10px 12px;cursor:pointer;transition:border-color .15s}
+.tmpl-card:active{border-color:var(--ac)}
+.tmpl-card-name{font-size:14px;font-weight:600;color:var(--tx);margin-bottom:4px}
+.tmpl-card-days{display:flex;gap:4px;flex-wrap:wrap;margin-top:6px}
+.tmpl-day-pill{font-size:11px;padding:2px 8px;border-radius:10px;background:var(--bg2);color:var(--tx3)}
+.tmpl-day-pill.filled{background:var(--ac);color:#fff}
+.tmpl-apply-btn{width:100%;font-size:14px;font-weight:600;padding:10px 0;border-radius:var(--r);border:none;background:var(--ac);color:#fff;cursor:pointer}
+.tmpl-apply-btn:active{opacity:0.8}
+.tmpl-new-btn{width:100%;font-size:13px;padding:8px 0;border-radius:var(--r);border:0.5px solid var(--br2);background:none;cursor:pointer;color:var(--tx2);margin-top:8px}
+.tmpl-editor{display:none}
+.tmpl-editor.open{display:block}
+.tmpl-editor-hdr{display:flex;align-items:center;gap:8px;margin-bottom:10px}
+.tmpl-editor-name{flex:1;font-size:14px;font-weight:600;border:none;border-bottom:1.5px solid var(--ac);background:none;color:var(--tx);font-family:inherit;padding:2px 0}
+.tmpl-day-row{display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:0.5px solid var(--br)}
+.tmpl-day-lbl{font-size:13px;font-weight:500;color:var(--tx);width:36px;flex-shrink:0}
+.tmpl-day-sel{flex:1;font-size:13px;padding:4px 8px;border-radius:6px;border:0.5px solid var(--br2);background:var(--bg2);color:var(--tx);font-family:inherit}
+.tmpl-save-btn{width:100%;font-size:14px;font-weight:600;padding:10px 0;border-radius:var(--r);border:none;background:var(--ac);color:#fff;cursor:pointer;margin-top:12px}
+.tmpl-back-btn{font-size:12px;padding:5px 12px;border-radius:var(--r);border:0.5px solid var(--br2);background:none;cursor:pointer;color:var(--tx2)}
 </style>
 </head>
 <body>
@@ -558,6 +586,14 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
   <div class="wstat"><div class="wstat-v" id="ws-sets">0</div><div class="wstat-l">sets</div></div>
   <div class="wstat"><div class="wstat-v" id="ws-grps">0</div><div class="wstat-l">groups</div></div>
   <div class="wstat"><div class="wstat-v" id="ws-card">0m</div><div class="wstat-l">cardio</div></div>
+</div>
+
+<div class="tmpl-section" id="tmpl-section">
+  <div class="tmpl-hdr" id="tmpl-hdr">
+    <span class="tmpl-title">&#128197; Week Templates</span>
+    <span class="tmpl-chev" id="tmpl-chev">&#9660;</span>
+  </div>
+  <div class="tmpl-body" id="tmpl-body"></div>
 </div>
 
 <div class="lib-section" id="lib-section">
@@ -637,7 +673,11 @@ var SESS = {
   af_bicep: {label:'Full Body (bicep-friendly)', dot:'dw', nm:'nw'},
   uppers_v1: {label:'Upper Body', dot:'dw', nm:'nw'},
   legs_v2: {label:'Legs', dot:'dw', nm:'nw'},
-  full_body_v1: {label:'Full Body', dot:'dw', nm:'nw'}
+  full_body_v1: {label:'Full Body', dot:'dw', nm:'nw'},
+  pt_s1: {label:'Lower A', dot:'dw', nm:'nw'},
+  pt_s2: {label:'Upper Push/Pull', dot:'dw', nm:'nw'},
+  pt_s3: {label:'Full Body', dot:'dw', nm:'nw'},
+  pt_s4: {label:'Lower B', dot:'dw', nm:'nw'}
 };
 var AI_HINTS = {
   pull:['Hypertrophy focus','Strength focus','Cable only','Minimal equipment'],
@@ -801,6 +841,84 @@ var FULL_BODY_V1_PLAN = [
   ]}
 ];
 
+// ── PT Programme Sessions ─────────────────────────────────────────────────────
+
+var PT_S1_PLAN = [ // Lower Body A ~42 min
+  {type:'normal', exs:[['Hamstring smash', '1', '30s/leg', '', 'Lacrosse ball if available, swap for foam roller. Slow, pause on tight spots', '']]},
+  {type:'normal', exs:[['Dynamic stretching', '1', '2 min', '', 'Hip circles, leg swings, knee circles', '']]},
+  {type:'normal', exs:[['Tempo back squat', '3', '8', '50', '3s down, 1s pause at bottom, 1s up — core braced, no forward lean', 'mmb618X9Ieg']]},
+  {type:'normal', exs:[['Single leg RDL', '3', '8 each side', '', 'Light DB, hinge at hip, slight knee bend, focus on balance and hamstring stretch', '']]},
+  {type:'superset', exs:[
+    ['Tib raise', '3', '15', '', 'Heel on step, raise toes as high as possible, controlled down', ''],
+    ['Calf raise', '3', '15', '', 'Full range — all the way up pause, all the way down', '']
+  ]},
+  {type:'circuit', exs:[
+    ['Weighted sit-up', '2', '15', '', 'Plate on chest, slow on the way down, 1 min rest between rounds', ''],
+    ['Side plank', '2', '30s/side', '', 'Hips up, straight line from head to feet', '']
+  ]}
+];
+
+var PT_S2_PLAN = [ // Upper Push/Pull ~44 min
+  {type:'normal', exs:[['Dynamic stretching', '1', '2 min', '', 'Arm circles, chest openers, shoulder rotations', '']]},
+  {type:'superset', exs:[
+    ['Bench press', '3', '8', '50', 'Controlled descent, retract shoulder blades, full range', ''],
+    ['Assisted pull-up', '3', '8', '', 'Overhand grip, full hang to chin over bar, controlled descent — kind on bicep tendon', '']
+  ]},
+  {type:'superset', exs:[
+    ['Overhead press', '3', '10', '30', 'Brace core, no arching, press straight overhead', ''],
+    ['Face pull', '3', '15', '', 'Pull to forehead, elbows high, squeeze rear delts', '']
+  ]},
+  {type:'superset', exs:[
+    ['Lateral raise', '3', '12', '', 'Slight bend in elbow, lead with elbows, stop at shoulder height', ''],
+    ['Cable tricep pushdown', '3', '12', '', 'Keep elbows tucked, full extension, controlled return', '']
+  ]},
+  {type:'circuit', exs:[
+    ['Weighted sit-up', '3', '15', '', 'Plate on chest, slow descent', ''],
+    ['Side plank', '3', '30s/side', '', 'Hips up, straight line', ''],
+    ['Cable woodchop', '3', '12 each side', '', 'Rotate from core not arms, control the return', ''],
+    ['Dead bug', '3', '8 each side', '', 'Lower back pressed to floor throughout, slow and controlled', '']
+  ]}
+];
+
+var PT_S3_PLAN = [ // Full Body Weekend ~60 min
+  {type:'normal', exs:[['Row machine warmup', '1', '5 min', '', 'Steady pace, easy resistance', '']]},
+  {type:'normal', exs:[['Hamstring smash', '1', '30s/leg', '', 'Lacrosse ball or foam roller', '']]},
+  {type:'normal', exs:[['Tempo back squat', '3', '8', '50', '3s down, 1s pause, 1s up — same cues as S1', 'mmb618X9Ieg']]},
+  {type:'normal', exs:[['Romanian dead lift', '3', '8', '50', 'Hinge at hip, bar close to body, feel the hamstring stretch', 'Q5vwsJFwhyg']]},
+  {type:'superset', exs:[
+    ['Machine chest press', '3', '8', '', 'Controlled tempo, full range, bicep-friendly', ''],
+    ['Assisted pull-up', '3', '8', '', 'Overhand grip, controlled descent, no kipping', '']
+  ]},
+  {type:'superset', exs:[
+    ['Overhead press', '3', '10', '30', 'Brace core, no arching', ''],
+    ['Face pull', '3', '15', '', 'Elbows high, squeeze rear delts', '']
+  ]},
+  {type:'superset', exs:[
+    ['Single leg extension', '3', '12 each side', '', 'Pause at top, slow descent — key knee rehab exercise', ''],
+    ['Single leg hamstring curl', '3', '12 each side', '', 'Full range, controlled, both directions', '']
+  ]},
+  {type:'circuit', exs:[
+    ['Weighted sit-up', '2', '15', '', 'Plate on chest', ''],
+    ['Side plank', '2', '30s/side', '', 'Hips up, straight line', '']
+  ]}
+];
+
+var PT_S4_PLAN = [ // Lower Body B ~42 min
+  {type:'normal', exs:[['Hamstring smash', '1', '30s/leg', '', 'Lacrosse ball or foam roller', '']]},
+  {type:'normal', exs:[['Dynamic stretching', '1', '2 min', '', 'Hip circles, leg swings', '']]},
+  {type:'normal', exs:[['Single leg leg press', '3', '10 each side', '', 'One leg at a time, full range, controlled descent — knee tracks over toes', '']]},
+  {type:'normal', exs:[['Step ups', '3', '10 each side', '', 'Bodyweight, standard box height, drive through heel, fully extend at top', '']]},
+  {type:'superset', exs:[
+    ['Tib raise', '3', '15', '', 'Heel on step, raise toes as high as possible', ''],
+    ['Calf raise', '3', '15', '', 'Full range, pause at top', '']
+  ]},
+  {type:'circuit', exs:[
+    ['Weighted sit-up', '2', '15', '', 'Plate on chest, slow descent', ''],
+    ['Side plank', '2', '30s/side', '', 'Hips up, straight line', '']
+  ]}
+];
+
+
 
 
 
@@ -827,6 +945,10 @@ function mkSess(type) {
     groups = LEGS_V2_PLAN.map(function(p){ return mkGrp(p.type, p.exs); });
   } else if(type === 'full_body_v1') {
     groups = FULL_BODY_V1_PLAN.map(function(p){ return mkGrp(p.type, p.exs); });
+  } else if(type === 'pt_s1') { groups = PT_S1_PLAN.map(function(p){ return mkGrp(p.type, p.exs); });
+  } else if(type === 'pt_s2') { groups = PT_S2_PLAN.map(function(p){ return mkGrp(p.type, p.exs); });
+  } else if(type === 'pt_s3') { groups = PT_S3_PLAN.map(function(p){ return mkGrp(p.type, p.exs); });
+  } else if(type === 'pt_s4') { groups = PT_S4_PLAN.map(function(p){ return mkGrp(p.type, p.exs); });
   } else {
     var pl = PLANNED[type] || [];
     groups = pl.map(function(ns){ return mkGrp(ns.length>1?'superset':'normal', ns.map(function(n){return [n];})); });
@@ -1482,6 +1604,7 @@ function renderAll(){
   renderLoadBar();
   renderBWStreak();
   renderResumeBanner();
+  renderTemplates();
   var wk=getWK(weekOffset), dates=getWDates(weekOffset);
   document.getElementById('wk-label').textContent=fmtD(dates[0])+' - '+fmtD(dates[6]);
   var list=document.getElementById('days-list'); list.innerHTML='';
@@ -3500,6 +3623,166 @@ function renderResumeBanner() {
 }
 
 
+
+// ── Week Templates ────────────────────────────────────────────────────────────
+var weekTemplates = [];
+var tmplOpen = false;
+var tmplEditIdx = -1;
+
+function loadTemplates() {
+  try {
+    weekTemplates = JSON.parse(localStorage.getItem('wt_templates')||'[]');
+    if(!weekTemplates.length) injectDefaultTemplate();
+  } catch(e) { weekTemplates = []; injectDefaultTemplate(); }
+}
+
+function saveTemplates() {
+  try { localStorage.setItem('wt_templates', JSON.stringify(weekTemplates)); } catch(e) {}
+}
+
+function injectDefaultTemplate() {
+  // Default PT week template
+  weekTemplates.push({
+    name: 'PT Programme Week',
+    days: [
+      '5-a-side Football',          // Mon
+      'PT — Lower A',          // Tue
+      'Cricket Nets',               // Wed
+      'PT — Upper Push/Pull',  // Thu
+      'PT — Lower B',          // Fri
+      'PT — Full Body (Weekend)', // Sat
+      null                          // Sun
+    ]
+  });
+  saveTemplates();
+}
+
+function applyTemplate(tmpl, wk) {
+  // Apply template to the current week — only fills empty days
+  var days = getWeek(wk);
+  var applied = 0;
+  tmpl.days.forEach(function(libName, di) {
+    if(!libName) return;
+    if(days[di] && days[di].length > 0) return; // don't overwrite existing sessions
+    var libItem = library.find(function(l){ return l.name === libName; });
+    if(!libItem) return;
+    var newSess = {
+      id: uid(), type: libItem.type, libName: libItem.name,
+      groups: JSON.parse(JSON.stringify(libItem.groups||[])),
+      cardio: {type:'Run',duration:'',distance:'',calories:''},
+      notes: libItem.notes||'', prs: [], cals: ''
+    };
+    days[di].push(newSess);
+    applied++;
+  });
+  save();
+  renderAll();
+  return applied;
+}
+
+function renderTemplates() {
+  var body = document.getElementById('tmpl-body');
+  var chev = document.getElementById('tmpl-chev');
+  if(!body) return;
+  chev.className = 'tmpl-chev' + (tmplOpen?' open':'');
+  body.className = 'tmpl-body' + (tmplOpen?' open':'');
+  if(!tmplOpen) return;
+
+  var wk = getWK(weekOffset);
+
+  if(tmplEditIdx >= 0) {
+    // Show editor
+    var tmpl = weekTemplates[tmplEditIdx];
+    var DAYS_SHORT = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+    var libOptions = '<option value="">— rest day —</option>'
+      + library.map(function(l){ return '<option value="'+l.name+'">'+l.name+'</option>'; }).join('');
+
+    var rows = DAYS_SHORT.map(function(d,i){
+      var sel = (tmpl.days[i]||'');
+      var opts = '<option value="">— rest day —</option>'
+        + library.map(function(l){
+            return '<option value="'+l.name+'"'+(l.name===sel?' selected':'')+'>'+l.name+'</option>';
+          }).join('');
+      return '<div class="tmpl-day-row">'
+        +'<span class="tmpl-day-lbl">'+d+'</span>'
+        +'<select class="tmpl-day-sel" data-di="'+i+'">'+opts+'</select>'
+        +'</div>';
+    }).join('');
+
+    body.innerHTML = '<div class="tmpl-editor open">'
+      +'<div class="tmpl-editor-hdr">'
+        +'<button class="tmpl-back-btn" id="tmpl-back">&#8592; Templates</button>'
+        +'<input type="text" class="tmpl-editor-name" id="tmpl-edit-name" value="'+tmpl.name+'" placeholder="Template name">'
+      +'</div>'
+      +rows
+      +'<button class="tmpl-save-btn" id="tmpl-apply-edit">&#9654; Apply to this week</button>'
+      +'<button class="tmpl-new-btn" id="tmpl-delete-edit" style="color:var(--dc);border-color:var(--dc);margin-top:6px">Delete template</button>'
+      +'</div>';
+
+    document.getElementById('tmpl-back').addEventListener('click',function(){tmplEditIdx=-1;renderTemplates();});
+    document.getElementById('tmpl-edit-name').addEventListener('input',function(e){tmpl.name=e.target.value;saveTemplates();});
+    body.querySelectorAll('.tmpl-day-sel').forEach(function(sel){
+      sel.addEventListener('change',function(){
+        tmpl.days[parseInt(sel.dataset.di)] = sel.value||null;
+        saveTemplates();
+      });
+    });
+    document.getElementById('tmpl-apply-edit').addEventListener('click',function(){
+      var n = applyTemplate(tmpl, wk);
+      tmplEditIdx=-1; tmplOpen=false; renderTemplates();
+      setDataStatus(n + ' session'+(n!==1?'s':'')+' added to week');
+    });
+    document.getElementById('tmpl-delete-edit').addEventListener('click',function(){
+      if(confirm('Delete "'+tmpl.name+'"?')){
+        weekTemplates.splice(tmplEditIdx,1); saveTemplates();
+        tmplEditIdx=-1; renderTemplates();
+      }
+    });
+    return;
+  }
+
+  // Template list view
+  var DAYS_SHORT = ['M','T','W','T','F','S','S'];
+  var cards = weekTemplates.map(function(tmpl,ti){
+    var pills = DAYS_SHORT.map(function(d,i){
+      var cls = tmpl.days[i] ? 'tmpl-day-pill filled' : 'tmpl-day-pill';
+      var title = tmpl.days[i] ? ' title="'+tmpl.days[i]+'"' : '';
+      return '<span class="'+cls+'"'+title+'>'+d+'</span>';
+    }).join('');
+    return '<div class="tmpl-card" data-ti="'+ti+'">'
+      +'<div class="tmpl-card-name">'+tmpl.name+'</div>'
+      +'<div class="tmpl-card-days">'+pills+'</div>'
+      +'</div>';
+  }).join('');
+
+  body.innerHTML = (cards||'<div style="font-size:13px;color:var(--tx3);padding:8px 0">No templates yet.</div>')
+    +'<button class="tmpl-apply-btn" id="tmpl-apply-first">&#9654; Apply to this week</button>'
+    +'<button class="tmpl-new-btn" id="tmpl-new">+ Create new template</button>';
+
+  body.querySelectorAll('.tmpl-card').forEach(function(card){
+    card.addEventListener('click',function(){
+      tmplEditIdx = parseInt(card.dataset.ti);
+      renderTemplates();
+    });
+  });
+
+  document.getElementById('tmpl-apply-first').addEventListener('click',function(){
+    if(!weekTemplates.length) return;
+    // If multiple templates, use the first; if just one, apply it
+    var n = applyTemplate(weekTemplates[0], wk);
+    tmplOpen = false; renderTemplates();
+    setDataStatus(n + ' session'+(n!==1?'s':'')+' added to week');
+  });
+
+  document.getElementById('tmpl-new').addEventListener('click',function(){
+    weekTemplates.push({ name:'New template', days:[null,null,null,null,null,null,null] });
+    saveTemplates();
+    tmplEditIdx = weekTemplates.length-1;
+    renderTemplates();
+  });
+}
+
+
 // ── Weekly Load Analyser ──────────────────────────────────────────────────────
 
 // Muscle group mapping - which session types / exercise keywords hit which groups
@@ -3732,9 +4015,40 @@ function renderLoadBar() {
     library.push({ name:'Full Body v1', type:'full_body_v1', groups: FULL_BODY_V1_PLAN.map(function(p){ return mkGrp(p.type, p.exs); }), notes:'Combined full body ~58 mins. Draws from Legs v2 and Uppers v1 — squat at 50kg, bench+RDL superset, OHP+row superset, pull up+lunge superset.', prs:[] });
     saveLib();
   }
+  var pts = [
+    {name:'PT — Lower A', type:'pt_s1', plan:PT_S1_PLAN, notes:'~42 min. Squat, SL RDL, tib/calf superset, abbreviated core. Knee-friendly, hamstring smash warmup.'},
+    {name:'PT — Upper Push/Pull', type:'pt_s2', plan:PT_S2_PLAN, notes:'~44 min. 3 supersets: bench/pull-up, OHP/face pull, lateral/tricep. Full core circuit.'},
+    {name:'PT — Full Body (Weekend)', type:'pt_s3', plan:PT_S3_PLAN, notes:'~60 min. Squat, RDL, chest/pull-up, OHP/face pull, SL knee rehab, abbreviated core.'},
+    {name:'PT — Lower B', type:'pt_s4', plan:PT_S4_PLAN, notes:'~42 min. SL leg press, step ups, tib/calf superset, abbreviated core.'}
+  ];
+  pts.forEach(function(pt){
+    var has = library.some(function(item){ return item.name === pt.name; });
+    if(!has) {
+      library.push({ name:pt.name, type:pt.type, groups: pt.plan.map(function(p){ return mkGrp(p.type, p.exs); }), notes:pt.notes, prs:[] });
+      saveLib();
+    }
+  });
+
+  // Sport sessions as cardio entries
+  var sports = [
+    { name:'5-a-side Football', type:'cardio', notes:'~60 min. High intensity interval — mix of sprints, jogs and walking. Lateral movement, agility, cardiovascular.' },
+    { name:'Cricket Nets', type:'cardio', notes:'~60 min. Mix of batting, bowling and fielding drills. Upper body rotational load — be mindful of bicep tendon on bowling.' }
+  ];
+  sports.forEach(function(s){
+    var has = library.some(function(item){ return item.name === s.name; });
+    if(!has) {
+      library.push({ name:s.name, type:s.type, groups:[], notes:s.notes, prs:[] });
+      saveLib();
+    }
+  });
 })();
 
 // Wire settings panel
+document.getElementById('tmpl-hdr').addEventListener('click', function(){
+  tmplOpen = !tmplOpen;
+  renderTemplates();
+});
+
 document.getElementById('settings-btn').addEventListener('click', function(){
   renderSettings();
   document.getElementById('settings-overlay').classList.add('open');
@@ -3742,6 +4056,8 @@ document.getElementById('settings-btn').addEventListener('click', function(){
 document.getElementById('settings-close').addEventListener('click', function(){
   document.getElementById('settings-overlay').classList.remove('open');
 });
+
+loadTemplates();
 
 renderAll();
 renderLib();
