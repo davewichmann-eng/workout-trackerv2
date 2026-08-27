@@ -966,7 +966,97 @@ var PT_S4_PLAN = [ // Lower Body B ~45 min
   ]}
 ];
 
+// ── PT Programme v3 — shorter split, no hamstring smash / foam rolling ────────
+// Every session: 500m row + dynamic stretch warmup, 6 lifting exercises, 5-min
+// core blast finisher. Designed to stay at or under 45 min end to end.
 
+var PT_PUSH_V3_PLAN = [ // Push (v3) ~40-43 min
+  {type:'normal', exs:[['Row machine warmup', '1', '500m', '', 'Steady pace, focus on form', '']]},
+  {type:'normal', exs:[['Dynamic stretching', '1', '2 min', '', 'Arm circles, chest openers, shoulder rotations', '']]},
+  {type:'normal', exs:[['Bench press', '3', '8', '50', 'Controlled descent, retract shoulder blades, full range', '']]},
+  {type:'normal', exs:[['Overhead press', '3', '10', '30', 'Brace core, no arching, press straight overhead', '']]},
+  {type:'superset', exs:[
+    ['Incline DB press', '3', '10', '', 'Controlled tempo, squeeze chest at the top, don’t flare elbows', ''],
+    ['Lateral raise', '3', '12', '', 'Slight bend in elbow, lead with elbows, stop at shoulder height', '']
+  ]},
+  {type:'superset', exs:[
+    ['Cable tricep pushdown', '3', '12', '', 'Keep elbows tucked, full extension, controlled return', ''],
+    ['Press ups', '3', '15', '', 'Full range, chest to floor, elbows 45 degrees — finisher', '']
+  ]},
+  {type:'circuit', exs:[
+    ['Weighted sit-up', '1', '50s', '', '5-min core blast — 50s work / 10s rest, straight into the next exercise', ''],
+    ['Side plank', '1', '50s', '', '50s work / 10s rest — switch sides halfway', ''],
+    ['Dead bug', '1', '50s', '', '50s work / 10s rest — lower back pressed to floor throughout', ''],
+    ['Cable woodchop', '1', '50s', '', '50s work / 10s rest — rotate from core not arms, control the return', ''],
+    ['Bicycle crunch', '1', '50s', '', '50s work / 10s rest — slow and controlled, opposite elbow to knee', '']
+  ]}
+];
+
+var PT_PULL_V3_PLAN = [ // Pull (v3) ~40-43 min
+  {type:'normal', exs:[['Row machine warmup', '1', '500m', '', 'Steady pace, focus on form', '']]},
+  {type:'normal', exs:[['Dynamic stretching', '1', '2 min', '', 'Arm circles, band pull-aparts, shoulder rotations', '']]},
+  {type:'normal', exs:[['Assisted pull-up', '3', '8', '', 'Overhand grip, full hang to chin over bar, controlled descent', '']]},
+  {type:'normal', exs:[['Bent-over row', '3', '10', '40', 'Hinge at hip, flat back, row to lower ribs, squeeze at top', '']]},
+  {type:'superset', exs:[
+    ['Seated cable row', '3', '10', '', 'Chest up, drive elbows back, controlled return, no swinging', ''],
+    ['Face pull', '3', '15', '', 'Pull to forehead, elbows high, squeeze rear delts', '']
+  ]},
+  {type:'superset', exs:[
+    ['Bicep curl', '3', '12', '', 'Elbows pinned to sides, controlled tempo, no swinging', ''],
+    ['Rear delt fly', '3', '12', '', 'Slight bend in elbow, squeeze shoulder blades together at top', '']
+  ]},
+  {type:'circuit', exs:[
+    ['Weighted sit-up', '1', '50s', '', '5-min core blast — 50s work / 10s rest, straight into the next exercise', ''],
+    ['Side plank', '1', '50s', '', '50s work / 10s rest — switch sides halfway', ''],
+    ['Dead bug', '1', '50s', '', '50s work / 10s rest — lower back pressed to floor throughout', ''],
+    ['Cable woodchop', '1', '50s', '', '50s work / 10s rest — rotate from core not arms, control the return', ''],
+    ['Bicycle crunch', '1', '50s', '', '50s work / 10s rest — slow and controlled, opposite elbow to knee', '']
+  ]}
+];
+
+var PT_FULL_V3_PLAN = [ // Full Body (v3) ~42-45 min
+  {type:'normal', exs:[['Row machine warmup', '1', '500m', '', 'Steady pace, focus on form', '']]},
+  {type:'normal', exs:[['Dynamic stretching', '1', '2 min', '', 'Hip circles, leg swings, arm circles, chest openers', '']]},
+  {type:'normal', exs:[['Tempo back squat', '3', '8', '50', '3s down, 1s pause at bottom, 1s up — core braced, no forward lean', 'mmb618X9Ieg']]},
+  {type:'superset', exs:[
+    ['Bench press', '3', '8', '50', 'Controlled descent, retract shoulder blades, full range — upper/lower pairing, minimal rest needed', ''],
+    ['Romanian dead lift', '3', '8', '50', 'Hinge at hip, soft knee, bar close to body, feel the hamstring stretch', 'Q5vwsJFwhyg']
+  ]},
+  {type:'normal', exs:[['Overhead press', '3', '10', '30', 'Brace core, no arching, press straight overhead', '']]},
+  {type:'superset', exs:[
+    ['Assisted pull-up', '3', '8', '', 'Full hang to chin over bar, controlled descent', ''],
+    ['Step ups', '3', '10 each side', '', 'Bodyweight, standard box height, drive through heel, fully extend at top — legs get a second hit', '']
+  ]},
+  {type:'circuit', exs:[
+    ['Weighted sit-up', '1', '50s', '', '5-min core blast — 50s work / 10s rest, straight into the next exercise', ''],
+    ['Side plank', '1', '50s', '', '50s work / 10s rest — switch sides halfway', ''],
+    ['Dead bug', '1', '50s', '', '50s work / 10s rest — lower back pressed to floor throughout', ''],
+    ['Cable woodchop', '1', '50s', '', '50s work / 10s rest — rotate from core not arms, control the return', ''],
+    ['Bicycle crunch', '1', '50s', '', '50s work / 10s rest — slow and controlled, opposite elbow to knee', '']
+  ]}
+];
+
+var PT_LEGS_V3_PLAN = [ // Legs (v3) ~42-45 min
+  {type:'normal', exs:[['Row machine warmup', '1', '500m', '', 'Steady pace, focus on form', '']]},
+  {type:'normal', exs:[['Dynamic stretching', '1', '2 min', '', 'Hip circles, leg swings, knee circles', '']]},
+  {type:'normal', exs:[['Tempo back squat', '3', '8', '50', '3s down, 1s pause at bottom, 1s up — core braced, no forward lean', 'mmb618X9Ieg']]},
+  {type:'normal', exs:[['Romanian dead lift', '3', '8', '50', 'Hinge at hip, soft knee, bar close to body, feel the hamstring stretch', 'Q5vwsJFwhyg']]},
+  {type:'superset', exs:[
+    ['Single leg leg press', '3', '10 each side', '', 'One leg at a time, full range, controlled descent — knee tracks over toes', ''],
+    ['Step ups', '3', '10 each side', '', 'Bodyweight, standard box height, drive through heel, fully extend at top', '']
+  ]},
+  {type:'superset', exs:[
+    ['Calf raise', '3', '15', '', 'Full range — all the way up, pause, all the way down', ''],
+    ['Leg extension', '3', '12', '', 'Controlled, pause at top, slow descent — no swinging', '']
+  ]},
+  {type:'circuit', exs:[
+    ['Weighted sit-up', '1', '50s', '', '5-min core blast — 50s work / 10s rest, straight into the next exercise', ''],
+    ['Side plank', '1', '50s', '', '50s work / 10s rest — switch sides halfway', ''],
+    ['Dead bug', '1', '50s', '', '50s work / 10s rest — lower back pressed to floor throughout', ''],
+    ['Cable woodchop', '1', '50s', '', '50s work / 10s rest — rotate from core not arms, control the return', ''],
+    ['Bicycle crunch', '1', '50s', '', '50s work / 10s rest — slow and controlled, opposite elbow to knee', '']
+  ]}
+];
 
 
 
@@ -998,6 +1088,10 @@ function mkSess(type) {
   } else if(type === 'pt_s3') { groups = PT_S3_PLAN.map(function(p){ return mkGrp(p.type, p.exs); });
   } else if(type === 'pt_s4') { groups = PT_S4_PLAN.map(function(p){ return mkGrp(p.type, p.exs); });
   } else if(type === 'pt_lower') { groups = PT_LOWER_PLAN.map(function(p){ return mkGrp(p.type, p.exs); });
+  } else if(type === 'pt_push_v3') { groups = PT_PUSH_V3_PLAN.map(function(p){ return mkGrp(p.type, p.exs); });
+  } else if(type === 'pt_pull_v3') { groups = PT_PULL_V3_PLAN.map(function(p){ return mkGrp(p.type, p.exs); });
+  } else if(type === 'pt_full_v3') { groups = PT_FULL_V3_PLAN.map(function(p){ return mkGrp(p.type, p.exs); });
+  } else if(type === 'pt_legs_v3') { groups = PT_LEGS_V3_PLAN.map(function(p){ return mkGrp(p.type, p.exs); });
   } else {
     var pl = PLANNED[type] || [];
     groups = pl.map(function(ns){ return mkGrp(ns.length>1?'superset':'normal', ns.map(function(n){return [n];})); });
@@ -3684,6 +3778,29 @@ function loadTemplates() {
     if(!weekTemplates.length) injectDefaultTemplate();
   } catch(e) { weekTemplates = []; injectDefaultTemplate(); }
   migrateLegacyTemplate();
+  ensureV3Template();
+}
+
+// One-off injection: adds the 'V3 - PT only' template for anyone who doesn't have
+// it yet, without touching any templates they already have (including custom ones).
+// Unlike migrateLegacyTemplate this never replaces anything — it only adds if missing,
+// same pattern as the PT library-session injection below.
+function ensureV3Template() {
+  var hasV3 = weekTemplates.some(function(t){ return t.name === 'V3 - PT only'; });
+  if (hasV3) return;
+  weekTemplates.push({
+    name: 'V3 - PT only',
+    days: [
+      'PT — Legs (v3)',           // Mon
+      'PT — Push (v3)',           // Tue
+      null,                        // Wed (rest)
+      'PT — Pull (v3)',           // Thu
+      'PT — Full Body (v3)',      // Fri
+      null,                        // Sat (rest)
+      null                         // Sun (rest)
+    ]
+  });
+  saveTemplates();
 }
 
 // One-off migration: replaces the old single 'PT Programme Week' template with the
@@ -4122,7 +4239,11 @@ function renderLoadBar() {
     {name:'PT — Upper Push/Pull', type:'pt_s2', plan:PT_S2_PLAN, notes:'~40-44 min. Row warmup + foam roll added. Bench press and pull-up are separate exercises, not a superset — machines too far apart. OHP/face pull and lateral/tricep supersets unchanged. 5-min core blast replaces the old spread-out circuit. Shared by both V1 and V2 weeks.'},
     {name:'PT — Full Body (Weekend)', type:'pt_s3', plan:PT_S3_PLAN, notes:'~55-58 min. Squat, RDL, chest/pull-up, OHP/face pull, SL knee rehab supersets. Foam rolling added, row warmup standardised to 500-750m, hamstring smash dropped (covered on leg day), 5-min core blast. Shared by both V1 and V2 weeks.'},
     {name:'PT — Lower B', type:'pt_s4', plan:PT_S4_PLAN, notes:'~45 min. Row warmup, foam roll, SL leg press, step-up/tib-raise superset, calf-raise/hamstring-curl superset, 5-min core blast. No hamstring smash (that lives on Lower A). Used in the 4-session week (V1) alongside Lower A.'},
-    {name:'PT — Lower', type:'pt_lower', plan:PT_LOWER_PLAN, notes:'~55 min. Merged Lower A + Lower B in one session — everything from both in the 3-session week (V2). Row warmup, foam roll, hamstring smash, squat, SL RDL, SL leg press, step-up/tib superset, calf-raise/hamstring-curl superset, 5-min core blast.'}
+    {name:'PT — Lower', type:'pt_lower', plan:PT_LOWER_PLAN, notes:'~55 min. Merged Lower A + Lower B in one session — everything from both in the 3-session week (V2). Row warmup, foam roll, hamstring smash, squat, SL RDL, SL leg press, step-up/tib superset, calf-raise/hamstring-curl superset, 5-min core blast.'},
+    {name:'PT — Push (v3)', type:'pt_push_v3', plan:PT_PUSH_V3_PLAN, notes:'~40-43 min. v3 split — no hamstring smash or foam rolling. 500m row + dynamic stretch warmup, 6 exercises (bench press, OHP, incline DB press/lateral raise superset, tricep pushdown/press-up superset), 5-min core blast. Kept at or under 45 min.'},
+    {name:'PT — Pull (v3)', type:'pt_pull_v3', plan:PT_PULL_V3_PLAN, notes:'~40-43 min. v3 split — no hamstring smash or foam rolling. 500m row + dynamic stretch warmup, 6 exercises (assisted pull-up, bent-over row, cable row/face pull superset, curl/rear delt fly superset), 5-min core blast. Kept at or under 45 min.'},
+    {name:'PT — Full Body (v3)', type:'pt_full_v3', plan:PT_FULL_V3_PLAN, notes:'~42-45 min. v3 split — no hamstring smash or foam rolling. 500m row + dynamic stretch warmup, 6 exercises (squat, bench/RDL superset, OHP, pull-up/step-up superset), 5-min core blast. Bench and pull-up kept out of the same superset — machines too far apart. No walking lunges — step ups used instead. Kept at or under 45 min.'},
+    {name:'PT — Legs (v3)', type:'pt_legs_v3', plan:PT_LEGS_V3_PLAN, notes:'~42-45 min. v3 split — no hamstring smash or foam rolling. 500m row + dynamic stretch warmup, 6 exercises (squat, RDL, leg press/step-up superset, calf raise/leg extension superset), 5-min core blast. No walking lunges — step ups used instead. Kept at or under 45 min.'}
   ];
   pts.forEach(function(pt){
     var existing = library.find(function(item){ return item.name === pt.name; });
